@@ -3,6 +3,7 @@
 import Anthropic from "./vendor/anthropic.js";
 import { google } from "./google.js";
 import { startBrain } from "./brain.js";
+import { startStars } from "./stars.js";
 
 /* ---------------- Archivio locale ---------------- */
 const store = {
@@ -68,15 +69,29 @@ function md(src) {
 /* ---------------- Navigazione ---------------- */
 function go(view) {
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
-  document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.go === view));
-  $("#composer").classList.toggle("hidden", view === "tasks" || view === "memory");
+  document.querySelectorAll(".drawer [data-go]").forEach((b) => b.classList.toggle("active", b.dataset.go === view));
+  $("#composer").classList.toggle("hidden", view !== "chat");
+  document.body.classList.toggle("on-chat", view === "chat");
+  menu(false);
   if (view === "chat") scrollChat();
-  if (view === "home") brain?.resize();
+  if (view === "home") brain?.intro();
   window.scrollTo({ top: view === "chat" ? document.body.scrollHeight : 0 });
 }
+// Menu laterale
+function menu(open) { $("#drawer").classList.toggle("open", open); $("#drawer-bg").classList.toggle("open", open); }
+$("#btn-menu").addEventListener("click", () => menu(!$("#drawer").classList.contains("open")));
+$("#drawer-bg").addEventListener("click", () => menu(false));
+// Scorri dal bordo sinistro per aprirlo, verso sinistra per chiuderlo
+let touchX = null;
+addEventListener("touchstart", (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+addEventListener("touchend", (e) => {
+  if (touchX == null) return; const dx = e.changedTouches[0].clientX - touchX;
+  if (touchX < 30 && dx > 60) menu(true); else if (dx < -60 && $("#drawer").classList.contains("open")) menu(false);
+  touchX = null;
+}, { passive: true });
 document.addEventListener("click", (e) => {
   const g = e.target.closest("[data-go]"); if (g) go(g.dataset.go);
-  if (e.target.closest("[data-open-settings]")) openSettings();
+  if (e.target.closest("[data-open-settings]")) { menu(false); openSettings(); }
 });
 
 /* ---------------- Orologio e saluto ---------------- */
@@ -676,6 +691,7 @@ $("#file-import").addEventListener("change", async (e) => {
 
 /* ---------------- Cervello animato della Home ---------------- */
 let brain = null;
+try { startStars($("#stars")); } catch (e) { console.warn("stelle", e); }
 try {
   brain = startBrain($("#brain"));
   // Quando Mark 1 pensa (pallino in alto che pulsa), anche il cervello si accende

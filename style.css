@@ -14,12 +14,13 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--text); }
+html { background: var(--bg); }
+body { margin: 0; color: var(--text); }
 body {
   font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   min-height: 100dvh;
-  padding: env(safe-area-inset-top) 0 calc(140px + env(safe-area-inset-bottom));
-  background: var(--bg);
+  padding: env(safe-area-inset-top) 0 calc(24px + env(safe-area-inset-bottom));
+  background: transparent;
 }
 h2 { font-size: 15px; margin: 0 0 10px; letter-spacing: .02em; }
 p { margin: 0 0 10px; }
@@ -106,7 +107,7 @@ main { padding: 0 16px; max-width: 720px; margin: 0 auto; }
 .md code { background: var(--panel-2); padding: 1px 5px; border-radius: 6px; }
 
 /* composer + tabs */
-.composer { position: fixed; left: 0; right: 0; bottom: calc(62px + env(safe-area-inset-bottom)); display: flex; gap: 8px;
+.composer { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)) !important;
   padding: 8px 12px; background: #000000ee; backdrop-filter: blur(10px); border-top: 1px solid var(--line); }
 .composer input { flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; }
 .composer.hidden { display: none; }
@@ -149,7 +150,7 @@ dialog label.check input { width: auto; margin: 0; }
 .g-box { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 
 /* Home: il cervello di Mark 1 */
-.brain-wrap { position: relative; height: calc(100dvh - 210px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height: 360px; margin: 0 -16px; }
+.brain-wrap { position: relative; height: calc(100dvh - 180px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height: 360px; margin: 0 -16px; }
 #brain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .brain-title { position: absolute; left: 0; right: 0; bottom: 4%; text-align: center; pointer-events: none; }
 .brain-title h1 { margin: 0; font-size: 38px; font-weight: 200; letter-spacing: .45em; padding-left: .45em; color: #ffffff;
@@ -157,3 +158,27 @@ dialog label.check input { width: auto; margin: 0; }
 .brain-sub { margin-top: 6px; font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
 @keyframes glow { 50% { text-shadow: 0 0 26px #ffffff88, 0 0 60px #f0c04a55; } }
 @media (prefers-reduced-motion: reduce) { .brain-title h1 { animation: none; } }
+
+/* sfondo spaziale */
+#stars { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+.card { background: linear-gradient(180deg, #101010e6, #0a0a0ae6); }
+body.on-chat { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+
+/* pulsante Chat in Home */
+.chat-cta { display: block; margin: 8px auto 0; padding: 12px 34px; border-radius: 999px; border: 1px solid #f0c04a88;
+  background: #f0c04a14; color: #fff; font-size: 16px; letter-spacing: .12em; cursor: pointer;
+  box-shadow: 0 0 18px #f0c04a33, inset 0 0 12px #f0c04a22; backdrop-filter: blur(6px); }
+.chat-cta:active { transform: scale(.97); }
+
+/* menu laterale */
+.menu-btn { font-size: 19px; }
+.drawer-bg { position: fixed; inset: 0; background: #0008; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; }
+.drawer-bg.open { opacity: 1; pointer-events: auto; }
+.drawer { position: fixed; top: 0; bottom: 0; left: 0; width: min(270px, 78vw); z-index: 21; background: #0a0a0af2; border-right: 1px solid var(--line);
+  padding: calc(18px + env(safe-area-inset-top)) 12px 18px; display: flex; flex-direction: column; gap: 4px;
+  transform: translateX(-102%); transition: transform .28s ease; backdrop-filter: blur(12px); }
+.drawer.open { transform: none; box-shadow: 0 0 40px #f0c04a22; }
+.drawer-title { font-weight: 200; letter-spacing: .4em; font-size: 18px; padding: 6px 12px 18px; color: #fff; text-shadow: 0 0 14px #f0c04a66; }
+.drawer button { display: flex; align-items: center; gap: 14px; background: none; border: none; border-radius: 12px; padding: 12px; font-size: 18px; color: var(--muted); cursor: pointer; text-align: left; }
+.drawer button span { font-size: 15.5px; }
+.drawer button.active { color: var(--accent); background: #f0c04a14; }

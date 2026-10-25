@@ -14,8 +14,10 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <canvas id="stars" aria-hidden="true"></canvas>
   <header class="topbar">
-    <div class="brand"><span class="orb" id="orb"></span><span>MARK 1</span></div>
+    <button class="icon-btn menu-btn" id="btn-menu" aria-label="Menu">☰</button>
+    <span class="orb" id="orb" hidden></span>
     <button class="icon-btn" id="btn-settings" aria-label="Impostazioni">⚙︎</button>
   </header>
 
@@ -26,6 +28,7 @@
         <canvas id="brain" aria-hidden="true"></canvas>
         <div class="brain-title"><h1>MARK 1</h1><div class="brain-sub" id="brain-sub">online</div></div>
       </div>
+      <button class="chat-cta" data-go="chat">💬 Chat</button>
     </section>
 
     <!-- DASHBOARD -->
@@ -120,20 +123,24 @@
     </section>
   </main>
 
-  <!-- composer (chat input), visible on home + chat -->
-  <form class="composer" id="composer">
+  <!-- composer (chat input), solo nella chat -->
+  <form class="composer hidden" id="composer">
     <button type="button" class="icon-btn" id="btn-mic" aria-label="Parla">🎙</button>
     <input id="prompt" placeholder="Chiedi a Mark 1…" autocomplete="off">
     <button class="icon-btn send" aria-label="Invia">➤</button>
   </form>
 
-  <nav class="tabs">
+  <!-- MENU LATERALE -->
+  <div class="drawer-bg" id="drawer-bg"></div>
+  <aside class="drawer" id="drawer" aria-label="Menu">
+    <div class="drawer-title">MARK 1</div>
     <button data-go="home" class="active">⌂<span>Home</span></button>
     <button data-go="dash">▦<span>Dashboard</span></button>
-    <button data-go="chat">◉<span>Mark 1</span></button>
+    <button data-go="chat">◉<span>Chat</span></button>
     <button data-go="tasks">✓<span>Task</span></button>
     <button data-go="memory">✦<span>Memoria</span></button>
-  </nav>
+    <button data-open-settings>⚙︎<span>Impostazioni</span></button>
+  </aside>
 
   <!-- SETTINGS -->
   <dialog id="settings">
@@ -167,7 +174,7 @@
         <button type="button" class="btn" id="btn-export">Backup dati</button>
         <label class="btn file">Ripristina<input type="file" id="file-import" accept="application/json" hidden></label>
       </div>
-      <div class="muted small">Versione <span id="app-version">9</span> · <button type="button" class="chip" id="btn-update">Aggiorna app</button></div>
+      <div class="muted small">Versione <span id="app-version">10</span> · <button type="button" class="chip" id="btn-update">Aggiorna app</button></div>
       <div class="row end">
         <button value="cancel" class="btn">Chiudi</button>
         <button value="save" class="btn primary" id="btn-save">Salva</button>

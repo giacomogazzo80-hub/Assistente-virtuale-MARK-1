@@ -4,7 +4,7 @@ export function startBrain(canvas) {
   const ctx = canvas.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let W = 0, H = 0, nodes = [], edges = [], adj = [], pulses = [], waves = [], ring = [];
-  let energy = 0, target = 0, raf = 0, angle = 0, last = 0, lastWave = 0;
+  let energy = 0, target = 0, raf = 0, angle = 0, last = 0, lastWave = 0, introStart = performance.now();
   const GOLD = "255,196,70", LIGHT = "255,236,170";
 
   function build() {
@@ -43,14 +43,16 @@ export function startBrain(canvas) {
     const t = ms / 1000, dt = Math.min(0.05, last ? t - last : 0.016); last = t;
     energy += (target - energy) * 0.04;
     angle += dt * (reduce ? 0.03 : 0.12 + energy * 0.9);
-    const cx = W / 2, cy = H * 0.44;
+    // Ingresso: la sfera arriva da lontano e si ingrandisce (con un piccolo rimbalzo)
+    const k = Math.min(1, (ms - introStart) / 2000), c1 = 1.4, zoom = reduce ? 1 : 1 + (c1 + 1) * (k - 1) ** 3 + c1 * (k - 1) ** 2;
+    const cx = W / 2, cy = H * 0.45;
     const beat = Math.pow(Math.max(0, Math.sin(t * (2 + energy * 3))), 6);
-    const R = Math.min(W * 0.36, H * 0.3) * (1 + 0.015 * Math.sin(t * 1.1) + energy * (0.05 + 0.03 * beat));
+    const R = zoom * Math.min(W * 0.43, H * 0.34) * (1 + 0.015 * Math.sin(t * 1.1) + energy * (0.05 + 0.03 * beat));
     ctx.clearRect(0, 0, W, H);
 
     // Alone dorato che pulsa
     const g = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, Math.min(R * 1.9, cy * 0.98));
-    g.addColorStop(0, `rgba(${GOLD},${0.10 + beat * 0.05 + energy * 0.18})`); g.addColorStop(1, `rgba(${GOLD},0)`);
+    g.addColorStop(0, `rgba(${GOLD},${0.18 + beat * 0.07 + energy * 0.2})`); g.addColorStop(1, `rgba(${GOLD},0)`);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
     // Rotazione 3D: asse verticale + leggera inclinazione
@@ -61,7 +63,7 @@ export function startBrain(canvas) {
       const f = 1 / (1 - z * 0.25); // un filo di prospettiva
       return [cx + x * R * f, cy + y * R * f, z];
     });
-    const depth = (z) => 0.35 + 0.65 * (z + 1) / 2; // dietro più scuro, davanti più luminoso
+    const depth = (z) => 0.5 + 0.5 * (z + 1) / 2; // dietro più scuro, davanti più luminoso
 
     // Anello orbitale: prima la metà dietro, alla fine quella davanti
     const drawRing = (front) => {
@@ -80,13 +82,13 @@ export function startBrain(canvas) {
     ctx.lineWidth = 0.7;
     for (const [i, j] of edges) {
       const dz = depth((P[i][2] + P[j][2]) / 2);
-      const a = (0.09 + 0.22 * Math.max(nodes[i].glow, nodes[j].glow) + energy * 0.08) * dz;
+      const a = (0.16 + 0.3 * Math.max(nodes[i].glow, nodes[j].glow) + energy * 0.08) * dz;
       ctx.strokeStyle = `rgba(${GOLD},${a})`;
       ctx.beginPath(); ctx.moveTo(P[i][0], P[i][1]); ctx.lineTo(P[j][0], P[j][1]); ctx.stroke();
     }
 
     // Nuovi impulsi: molti di più quando pensa
-    const rate = reduce ? 0.03 : 0.3 + energy * 2.5;
+    const rate = reduce ? 0.03 : 0.45 + energy * 2.5;
     for (let k = 0; k < 4; k++) if (Math.random() < rate / 4 && edges.length) {
       const [i, j] = edges[(Math.random() * edges.length) | 0];
       pulses.push(Math.random() < 0.5 ? { from: i, to: j, p: 0 } : { from: j, to: i, p: 0 });
@@ -112,8 +114,8 @@ export function startBrain(canvas) {
     nodes.forEach((n, i) => {
       n.glow *= 0.94;
       const dz = depth(P[i][2]), tw = 0.5 + 0.5 * Math.sin(t * 1.7 + n.ph);
-      const r = (1.1 + n.glow * 2 + tw * 0.5 + energy * 0.5) * (0.55 + dz * 0.6) * (n.inner ? 0.8 : 1);
-      ctx.fillStyle = `rgba(255,${200 + n.glow * 45},${80 + n.glow * 110},${Math.min(1, 0.35 + tw * 0.25 + n.glow * 0.5 + energy * 0.15) * dz})`;
+      const r = (1.4 + n.glow * 2 + tw * 0.5 + energy * 0.5) * (0.55 + dz * 0.6) * (n.inner ? 0.8 : 1);
+      ctx.fillStyle = `rgba(255,${200 + n.glow * 45},${80 + n.glow * 110},${Math.min(1, 0.6 + tw * 0.25 + n.glow * 0.5 + energy * 0.15) * dz})`;
       if (n.glow > 0.3) { ctx.shadowColor = `rgb(${GOLD})`; ctx.shadowBlur = 12 * n.glow * dz; }
       ctx.beginPath(); ctx.arc(P[i][0], P[i][1], r, 0, 6.28); ctx.fill(); ctx.shadowBlur = 0;
     });
@@ -142,5 +144,6 @@ export function startBrain(canvas) {
   return {
     thinking(on) { target = on ? 1 : 0; if (on) nodes.forEach((n) => { if (Math.random() < 0.3) n.glow = 1; }); },
     resize: restart,
+    intro() { introStart = performance.now(); },
   };
 }
