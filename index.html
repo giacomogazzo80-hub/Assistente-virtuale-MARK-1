@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070b14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Jarvis">
+  <title>Jarvis</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="orb" id="orb"></span><span>JARVIS</span></div>
+    <button class="icon-btn" id="btn-settings" aria-label="Impostazioni">⚙︎</button>
+  </header>
+
+  <main>
+    <!-- HOME -->
+    <section class="view active" id="view-home">
+      <div class="hello">
+        <div class="clock" id="clock">--:--</div>
+        <div class="greet" id="greet">Ciao</div>
+        <div class="date" id="today"></div>
+      </div>
+
+      <div class="card setup" id="setup-card" hidden>
+        <h2>Prima configurazione</h2>
+        <p>Per far ragionare Jarvis serve la tua chiave della Claude API. Resta salvata solo su questo telefono.</p>
+        <button class="btn primary" data-open-settings>Inserisci la chiave</button>
+      </div>
+
+      <div class="card" id="weather-card">
+        <div class="card-head"><h2>Meteo</h2><span class="muted" id="weather-place"></span></div>
+        <div id="weather-body" class="muted">Carico il meteo…</div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Mercati</h2><span class="muted small" id="feed-time"></span></div>
+        <div class="mkts" id="markets"><span class="muted">Carico le quotazioni…</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Notizie</h2>
+          <div class="seg" id="news-tabs">
+            <button data-k="italia" class="on">Italia</button><button data-k="milano">Milano</button><button data-k="mondo">Mondo</button><button data-k="economia">Economia</button>
+          </div></div>
+        <ul class="news" id="news"><li class="muted">Carico le notizie…</li></ul>
+        <button class="chip" id="btn-brief">✦ Riassunto di Jarvis</button>
+        <div id="brief-body" class="md"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Prossimi task</h2><button class="chip" data-go="tasks">Tutti</button></div>
+        <ul class="task-list" id="home-tasks"></ul>
+      </div>
+    </section>
+
+    <!-- CHAT -->
+    <section class="view" id="view-chat">
+      <div class="chat-tools">
+        <button class="chip" id="btn-newchat">Nuova conversazione</button>
+        <span class="muted small" id="chat-model"></span>
+      </div>
+      <div class="muted small spend" id="spend-line"></div>
+      <div class="chat" id="chat"></div>
+    </section>
+
+    <!-- TASKS -->
+    <section class="view" id="view-tasks">
+      <div class="card">
+        <h2>Nuovo task</h2>
+        <form id="task-form" class="row-form">
+          <input id="task-text" placeholder="Cosa devi fare?" required>
+          <div class="row">
+            <input id="task-due" type="date" aria-label="Scadenza">
+            <select id="task-prio" aria-label="Priorità">
+              <option value="alta">Alta</option><option value="media" selected>Media</option><option value="bassa">Bassa</option>
+            </select>
+            <button class="btn primary">Aggiungi</button>
+          </div>
+        </form>
+      </div>
+      <div class="card"><h2>Da fare</h2><ul class="task-list" id="task-list"></ul></div>
+      <div class="card"><h2>Completati</h2><ul class="task-list done" id="task-done"></ul></div>
+    </section>
+
+    <!-- MEMORY -->
+    <section class="view" id="view-memory">
+      <div class="card">
+        <h2>Cosa sa Jarvis di te</h2>
+        <p class="muted small">Jarvis salva qui le cose importanti che gli dici. Puoi aggiungerle o cancellarle tu. Restano solo su questo telefono.</p>
+        <form id="mem-form" class="row-form"><div class="row">
+          <input id="mem-text" placeholder="Es. Preferisco risposte brevi" required>
+          <button class="btn primary">Salva</button></div></form>
+        <ul class="mem-list" id="mem-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- composer (chat input), visible on home + chat -->
+  <form class="composer" id="composer">
+    <button type="button" class="icon-btn" id="btn-mic" aria-label="Parla">🎙</button>
+    <input id="prompt" placeholder="Chiedi a Jarvis…" autocomplete="off">
+    <button class="icon-btn send" aria-label="Invia">➤</button>
+  </form>
+
+  <nav class="tabs">
+    <button data-go="home" class="active">⌂<span>Home</span></button>
+    <button data-go="chat">◉<span>Jarvis</span></button>
+    <button data-go="tasks">✓<span>Task</span></button>
+    <button data-go="memory">✦<span>Memoria</span></button>
+  </nav>
+
+  <!-- SETTINGS -->
+  <dialog id="settings">
+    <form method="dialog" id="settings-form">
+      <h2>Impostazioni</h2>
+      <label>Chiave Claude API
+        <input id="s-key" type="password" placeholder="sk-ant-…" autocomplete="off">
+        <span class="muted small">Salvata solo su questo dispositivo. Creala su console.anthropic.com.</span>
+      </label>
+      <label>Il tuo nome <input id="s-name"></label>
+      <label>Città per il meteo <input id="s-city"></label>
+      <label>Cervello (modello Claude)
+        <select id="s-model">
+          <option value="claude-haiku-5-5">Haiku 5.5: costa pochissimo (consigliato)</option>
+          <option value="claude-sonnet-5-5">Sonnet 5.5: più bravo, costa circa 20 volte di più</option>
+          <option value="claude-opus-5-5">Opus 5.5: il più intelligente, costa circa 40 volte di più</option>
+        </select>
+      </label>
+      <label>Limite di spesa mensile (dollari)
+        <input id="s-cap" type="number" min="0" step="0.05" inputmode="decimal">
+        <span class="muted small">Raggiunto il limite, Jarvis si ferma fino al mese dopo. <b id="s-spent"></b></span>
+      </label>
+      <label class="check"><input type="checkbox" id="s-web"> Permetti a Jarvis di cercare sul web (circa 1 centesimo per ricerca)</label>
+      <label class="check"><input type="checkbox" id="s-voice"> Jarvis legge ad alta voce le risposte</label>
+      <div class="row">
+        <button type="button" class="btn" id="btn-export">Backup dati</button>
+        <label class="btn file">Ripristina<input type="file" id="file-import" accept="application/json" hidden></label>
+      </div>
+      <div class="row end">
+        <button value="cancel" class="btn">Chiudi</button>
+        <button value="save" class="btn primary" id="btn-save">Salva</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
