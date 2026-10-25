@@ -84,7 +84,12 @@ async function gdelt() {
   // Notizie mondiali in italiano degli ultimi 60 minuti
   const url = "https://api.gdeltproject.org/api/v2/doc/doc?query=sourcelang:italian%20(governo%20OR%20mercati%20OR%20guerra%20OR%20Milano)&mode=artlist&format=json&maxrecords=20&sort=datedesc&timespan=3h";
   try {
-    const j = await get(url, "json");
+    // GDELT accetta una richiesta ogni 5 secondi: se risponde "troppe richieste" riprova fino a 3 volte
+    let j;
+    for (let i = 0; ; i++) {
+      try { j = await get(url, "json"); break; }
+      catch (e) { if (i >= 2 || !/429/.test(e.message)) throw e; await new Promise((r) => setTimeout(r, 7000)); }
+    }
     const items = (j.articles || []).map((a) => ({
       title: a.title, link: a.url, source: a.domain,
       date: a.seendate ? new Date(a.seendate.replace(/(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)Z/, "$1-$2-$3T$4:$5:$6Z")).toISOString() : null,
