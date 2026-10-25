@@ -679,4 +679,16 @@ function boot() {
 const back = google.configured() ? google.handleRedirect() : null;
 if (!(google.configured() && !back && google.maybeRefresh())) boot();
 setInterval(() => { loadWeather(); loadFeed(); loadAgenda(); }, 30 * 60 * 1000);
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js");
+// Aggiornamenti: a ogni apertura controlla se c'è una versione nuova e, se sì, ricarica da sola.
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js").then((reg) => {
+    reg.update();
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update(); });
+  });
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (!reloaded && navigator.serviceWorker.controller) { reloaded = true; location.reload(); } });
+}
+$("#btn-update").addEventListener("click", async () => {
+  try { for (const r of await navigator.serviceWorker?.getRegistrations?.() || []) await r.unregister(); for (const k of await caches.keys()) await caches.delete(k); } catch {}
+  location.reload();
+});
