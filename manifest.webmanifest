@@ -1,6 +1,6 @@
 {
-  "name": "Jarvis – Assistente personale",
-  "short_name": "Jarvis",
+  "name": "Mark 1 – Assistente personale",
+  "short_name": "Mark 1",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

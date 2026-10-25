@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#070b14">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Jarvis">
-  <title>Jarvis</title>
+  <meta name="apple-mobile-web-app-title" content="Mark 1">
+  <title>Mark 1</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -15,13 +15,21 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="orb" id="orb"></span><span>JARVIS</span></div>
+    <div class="brand"><span class="orb" id="orb"></span><span>MARK 1</span></div>
     <button class="icon-btn" id="btn-settings" aria-label="Impostazioni">⚙︎</button>
   </header>
 
   <main>
-    <!-- HOME -->
+    <!-- HOME: solo il nome e il cervello vivo -->
     <section class="view active" id="view-home">
+      <div class="brain-wrap">
+        <canvas id="brain" aria-hidden="true"></canvas>
+        <div class="brain-title"><h1>MARK 1</h1><div class="brain-sub" id="brain-sub">online</div></div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="view" id="view-dash">
       <div class="hello">
         <div class="clock" id="clock">--:--</div>
         <div class="greet" id="greet">Ciao</div>
@@ -30,7 +38,7 @@
 
       <div class="card setup" id="setup-card" hidden>
         <h2>Prima configurazione</h2>
-        <p>Per far ragionare Jarvis serve la tua chiave della Claude API. Resta salvata solo su questo telefono.</p>
+        <p>Per far ragionare Mark 1 serve la tua chiave della Claude API. Resta salvata solo su questo telefono.</p>
         <button class="btn primary" data-open-settings>Inserisci la chiave</button>
       </div>
 
@@ -60,7 +68,7 @@
             <button data-k="italia" class="on">Italia</button><button data-k="milano">Milano</button><button data-k="mondo">Mondo</button><button data-k="economia">Economia</button>
           </div></div>
         <ul class="news" id="news"><li class="muted">Carico le notizie…</li></ul>
-        <button class="chip" id="btn-brief">✦ Riassunto di Jarvis</button>
+        <button class="chip" id="btn-brief">✦ Riassunto di Mark 1</button>
         <div id="brief-body" class="md"></div>
       </div>
 
@@ -102,8 +110,8 @@
     <!-- MEMORY -->
     <section class="view" id="view-memory">
       <div class="card">
-        <h2>Cosa sa Jarvis di te</h2>
-        <p class="muted small">Jarvis salva qui le cose importanti che gli dici. Puoi aggiungerle o cancellarle tu. Restano solo su questo telefono.</p>
+        <h2>Cosa sa Mark 1 di te</h2>
+        <p class="muted small">Mark 1 salva qui le cose importanti che gli dici. Puoi aggiungerle o cancellarle tu. Restano solo su questo telefono.</p>
         <form id="mem-form" class="row-form"><div class="row">
           <input id="mem-text" placeholder="Es. Preferisco risposte brevi" required>
           <button class="btn primary">Salva</button></div></form>
@@ -115,13 +123,14 @@
   <!-- composer (chat input), visible on home + chat -->
   <form class="composer" id="composer">
     <button type="button" class="icon-btn" id="btn-mic" aria-label="Parla">🎙</button>
-    <input id="prompt" placeholder="Chiedi a Jarvis…" autocomplete="off">
+    <input id="prompt" placeholder="Chiedi a Mark 1…" autocomplete="off">
     <button class="icon-btn send" aria-label="Invia">➤</button>
   </form>
 
   <nav class="tabs">
     <button data-go="home" class="active">⌂<span>Home</span></button>
-    <button data-go="chat">◉<span>Jarvis</span></button>
+    <button data-go="dash">▦<span>Dashboard</span></button>
+    <button data-go="chat">◉<span>Mark 1</span></button>
     <button data-go="tasks">✓<span>Task</span></button>
     <button data-go="memory">✦<span>Memoria</span></button>
   </nav>
@@ -145,10 +154,10 @@
       </label>
       <label>Limite di spesa mensile (dollari)
         <input id="s-cap" type="number" min="0" step="0.05" inputmode="decimal">
-        <span class="muted small">Raggiunto il limite, Jarvis si ferma fino al mese dopo. <b id="s-spent"></b></span>
+        <span class="muted small">Raggiunto il limite, Mark 1 si ferma fino al mese dopo. <b id="s-spent"></b></span>
       </label>
-      <label class="check"><input type="checkbox" id="s-web"> Permetti a Jarvis di cercare sul web (circa 1 centesimo per ricerca)</label>
-      <label class="check"><input type="checkbox" id="s-voice"> Jarvis legge ad alta voce le risposte</label>
+      <label class="check"><input type="checkbox" id="s-web"> Permetti a Mark 1 di cercare sul web (circa 1 centesimo per ricerca)</label>
+      <label class="check"><input type="checkbox" id="s-voice"> Mark 1 legge ad alta voce le risposte</label>
       <div id="s-google" class="g-box" hidden>
         <b>Google</b> (Calendar, Gmail in sola lettura, sincronizzazione su Drive): <span id="s-google-status"></span>
         <div class="muted small" id="sync-line"></div>
@@ -158,7 +167,7 @@
         <button type="button" class="btn" id="btn-export">Backup dati</button>
         <label class="btn file">Ripristina<input type="file" id="file-import" accept="application/json" hidden></label>
       </div>
-      <div class="muted small">Versione <span id="app-version">7</span> · <button type="button" class="chip" id="btn-update">Aggiorna app</button></div>
+      <div class="muted small">Versione <span id="app-version">8</span> · <button type="button" class="chip" id="btn-update">Aggiorna app</button></div>
       <div class="row end">
         <button value="cancel" class="btn">Chiudi</button>
         <button value="save" class="btn primary" id="btn-save">Salva</button>

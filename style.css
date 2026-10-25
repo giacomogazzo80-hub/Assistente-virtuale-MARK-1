@@ -110,7 +110,7 @@ main { padding: 0 16px; max-width: 720px; margin: 0 auto; }
   padding: 8px 12px; background: #070b14ee; backdrop-filter: blur(10px); border-top: 1px solid var(--line); }
 .composer input { flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; }
 .composer.hidden { display: none; }
-.tabs { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr);
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr);
   padding-bottom: env(safe-area-inset-bottom); background: #0a1020; border-top: 1px solid var(--line); }
 .tabs button { background: none; border: none; color: var(--muted); padding: 8px 0 10px; font-size: 18px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .tabs button span { font-size: 11px; }
@@ -147,3 +147,13 @@ dialog label.check input { width: auto; margin: 0; }
 .agenda .when { color: var(--accent); font-size: 13px; margin-right: 6px; }
 .mail-line { font-size: 13.5px; color: var(--muted); padding-top: 8px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
 .g-box { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+
+/* Home: il cervello di Mark 1 */
+.brain-wrap { position: relative; height: calc(100dvh - 210px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height: 360px; margin: 0 -16px; }
+#brain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.brain-title { position: absolute; left: 0; right: 0; bottom: 4%; text-align: center; pointer-events: none; }
+.brain-title h1 { margin: 0; font-size: 38px; font-weight: 200; letter-spacing: .45em; padding-left: .45em; color: #dff7ff;
+  text-shadow: 0 0 18px #36d3ffaa, 0 0 42px #36d3ff55; animation: glow 4s ease-in-out infinite; }
+.brain-sub { margin-top: 6px; font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+@keyframes glow { 50% { text-shadow: 0 0 26px #36d3ffdd, 0 0 60px #36d3ff77; } }
+@media (prefers-reduced-motion: reduce) { .brain-title h1 { animation: none; } }

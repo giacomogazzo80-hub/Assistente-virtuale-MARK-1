@@ -1,11 +1,11 @@
-# Jarvis: il tuo assistente personale
+# Mark 1: il tuo assistente personale
 
 App per telefono (si installa dalla schermata Home, come un'app normale) con:
 
 - **Dashboard**: ora, meteo di Vimodrone a 4 giorni, mercati (FTSE MIB, S&P 500, Nasdaq, Euro Stoxx, EUR/USD, oro, Brent, Bitcoin), notizie Italia/Milano/Mondo/Economia, prossimi task
-- **Chat con Jarvis**: scrivi o parla 🎙. Il cervello è Claude Haiku 5.5 (via Claude API), che conosce già le notizie e i mercati del giorno
-- **Task**: Jarvis li crea e li completa quando glielo chiedi ("ricordami di…"), oppure li gestisci tu
-- **Memoria**: Jarvis salva da solo le cose importanti su di te. Puoi vederle e cancellarle
+- **Chat con Mark 1**: scrivi o parla 🎙. Il cervello è Claude Haiku 5.5 (via Claude API), che conosce già le notizie e i mercati del giorno
+- **Task**: Mark 1 li crea e li completa quando glielo chiedi ("ricordami di…"), oppure li gestisci tu
+- **Memoria**: Mark 1 salva da solo le cose importanti su di te. Puoi vederle e cancellarle
 
 **Privacy**: task, memoria, conversazioni e chiave API restano **solo sul tuo telefono**. Non ci sono server nostri. I messaggi vanno solo a Claude per ricevere la risposta.
 
@@ -19,19 +19,19 @@ App per telefono (si installa dalla schermata Home, come un'app normale) con:
 | Cosa | Costo |
 |---|---|
 | Meteo, mercati, notizie, task, memoria | **Gratis** (Open-Meteo, Yahoo Finance, CoinGecko, BCE, ANSA, Google News, Corriere Milano, Sole 24 Ore, GDELT: aggiornati ogni 30 minuti da GitHub) |
-| Una domanda a Jarvis (Claude Haiku 5.5) | circa **0,05–0,1 centesimi** |
-| "Riassunto di Jarvis" delle notizie | circa **0,1 centesimi** |
+| Una domanda a Mark 1 (Claude Haiku 5.5) | circa **0,05–0,1 centesimi** |
+| "Riassunto di Mark 1" delle notizie | circa **0,1 centesimi** |
 | Ricerca nelle notizie e su Wikipedia | **Gratis** (solo i pochi token letti) |
 | Ricerca web completa (spenta di base) | circa **1 centesimo** a ricerca |
 
 Esempio: 5 domande al giorno per un mese costano circa **10–15 centesimi**.
-Nell'app c'è un **limite di spesa mensile** (di base 0,50 $): raggiunto il limite, Jarvis si ferma fino al mese dopo e il resto dell'app continua a funzionare gratis. La spesa del mese è sempre visibile nella chat.
+Nell'app c'è un **limite di spesa mensile** (di base 0,50 $): raggiunto il limite, Mark 1 si ferma fino al mese dopo e il resto dell'app continua a funzionare gratis. La spesa del mese è sempre visibile nella chat.
 
 ## Installarla sul telefono
 
 1. Apri il link dell'app (es. https://giacomogazzo80-hub.github.io/Assistente-virtuale-MARK-1/)
 2. **iPhone**: Safari → Condividi → "Aggiungi alla schermata Home". **Android**: Chrome → ⋮ → "Installa app"
-3. Apri Jarvis → ⚙︎ → incolla la chiave API → Salva
+3. Apri Mark 1 → ⚙︎ → incolla la chiave API → Salva
 
 ## Prossimi passi possibili
 

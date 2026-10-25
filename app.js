@@ -1,7 +1,8 @@
-// Jarvis: assistente personale. Tutti i dati restano su questo dispositivo;
+// Mark 1: assistente personale. Tutti i dati restano su questo dispositivo;
 // l'unico servizio esterno con dati personali è la Claude API (il "cervello").
 import Anthropic from "./vendor/anthropic.js";
 import { google } from "./google.js";
+import { startBrain } from "./brain.js";
 
 /* ---------------- Archivio locale ---------------- */
 const store = {
@@ -70,6 +71,7 @@ function go(view) {
   document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.go === view));
   $("#composer").classList.toggle("hidden", view === "tasks" || view === "memory");
   if (view === "chat") scrollChat();
+  if (view === "home") brain?.resize();
   window.scrollTo({ top: view === "chat" ? document.body.scrollHeight : 0 });
 }
 document.addEventListener("click", (e) => {
@@ -138,7 +140,7 @@ function renderTasks() {
   const open = openTasks();
   $("#task-list").innerHTML = open.map(taskLi).join("") || `<li class="muted">Niente da fare. 🎉</li>`;
   $("#task-done").innerHTML = S.tasks.filter((t) => t.done).slice(-20).reverse().map(taskLi).join("") || `<li class="muted">Ancora nessuno.</li>`;
-  $("#home-tasks").innerHTML = open.slice(0, 5).map(taskLi).join("") || `<li class="muted">Nessun task aperto. Puoi dire a Jarvis “ricordami di…”.</li>`;
+  $("#home-tasks").innerHTML = open.slice(0, 5).map(taskLi).join("") || `<li class="muted">Nessun task aperto. Puoi dire a Mark 1 “ricordami di…”.</li>`;
 }
 function addTask(text, due = "", priority = "media") {
   const t = { id: uid(), text: text.trim(), due: due || "", priority: PRIO[priority] != null ? priority : "media", done: false, created: Date.now(), updated: Date.now() };
@@ -166,7 +168,7 @@ async function syncTaskEvents() {
       const want = !t.done && t.due && t.due >= todayISO();
       if (want && !t.eventId) {
         const ev = await google.createEvent({ title: "📝 " + t.text, date: t.due, time: "09:00", minutes: 15, reminders: [0, 24 * 60],
-          description: `Task di Jarvis (priorità ${t.priority})` });
+          description: `Task di Mark 1 (priorità ${t.priority})` });
         t.eventId = ev.id; t.eventDue = t.due; t.updated = Date.now();
       } else if (t.eventId && (!want || t.eventDue !== t.due)) {
         await google.deleteEvent(t.eventId); t.eventId = null; t.updated = Date.now();
@@ -210,7 +212,7 @@ function getClient() {
 }
 
 function systemPrompt() {
-  return `Sei Jarvis, l'assistente personale di ${S.settings.name}. Rispondi sempre in italiano.
+  return `Sei Mark 1, l'assistente personale di ${S.settings.name}. Rispondi sempre in italiano.
 Stile: chiaro, strutturato, senza fronzoli; usa elenchi e grassetti quando aiutano, niente tabelle. Su telefono: risposte brevi salvo richiesta contraria.
 ${S.settings.name} vive a ${S.settings.city}; il focus locale è Milano, poi Roma e l'Italia.
 Ti occupi di: mercati finanziari, notizie, meteo, task lavorativi e personali, promemoria, scadenze, priorità.
@@ -451,12 +453,12 @@ async function callClaude(messages, { effort, onEvent, withTools = true }) {
 }
 
 function explainError(e) {
-  if (e.message === "BUDGET") return `Hai raggiunto il limite di spesa del mese (${money(S.settings.monthlyCap)}). Puoi alzarlo nelle impostazioni ⚙︎, altrimenti Jarvis riparte il mese prossimo. Meteo, notizie, mercati e task continuano a funzionare gratis.`;
+  if (e.message === "BUDGET") return `Hai raggiunto il limite di spesa del mese (${money(S.settings.monthlyCap)}). Puoi alzarlo nelle impostazioni ⚙︎, altrimenti Mark 1 riparte il mese prossimo. Meteo, notizie, mercati e task continuano a funzionare gratis.`;
   if (e.message === "NO_KEY") return "Manca la chiave della Claude API: aprila dalle impostazioni ⚙︎.";
   if (e instanceof Anthropic.AuthenticationError) return "La chiave API non è valida. Controllala nelle impostazioni ⚙︎.";
   if (e instanceof Anthropic.PermissionDeniedError) return "La chiave non ha i permessi necessari (controlla il credito sulla console Anthropic).";
   if (e instanceof Anthropic.RateLimitError) return "Troppe richieste in poco tempo. Riprova tra un minuto.";
-  if (e instanceof Anthropic.APIConnectionError) return "Nessuna connessione con il cervello di Jarvis. Controlla internet.";
+  if (e instanceof Anthropic.APIConnectionError) return "Nessuna connessione con il cervello di Mark 1. Controlla internet.";
   if (e instanceof Anthropic.APIError) return `Errore dal server (${e.status ?? "?"}): ${e.message}`;
   return "Qualcosa è andato storto: " + (e.message || e);
 }
@@ -480,7 +482,7 @@ function bubble(role, html, cls = "") {
 function renderChat() {
   $("#chat").innerHTML = "";
   const v = S.convo?.view || [];
-  if (!v.length) $("#chat").innerHTML = `<div class="empty">Sono Jarvis. Chiedimi mercati, notizie, meteo,<br>o dimmi “ricordami di…”.<br><span class="small">Puoi anche parlare con il microfono 🎙</span></div>`;
+  if (!v.length) $("#chat").innerHTML = `<div class="empty">Sono Mark 1. Chiedimi mercati, notizie, meteo,<br>o dimmi “ricordami di…”.<br><span class="small">Puoi anche parlare con il microfono 🎙</span></div>`;
   for (const m of v) bubble(m.role === "user" ? "user" : "bot", m.role === "user" ? esc(m.text) : `<div class="md">${md(m.text)}</div>` + (m.status || []).map((s) => `<div class="status">${esc(s)}</div>`).join(""), m.error ? "error" : "");
   $("#chat-model").textContent = { "claude-opus-5-5": "Opus 5.5", "claude-sonnet-5-5": "Sonnet 5.5", "claude-haiku-5-5": "Haiku 5.5" }[S.settings.model] || S.settings.model;
 }
@@ -569,7 +571,7 @@ function feedSummary(perSection = 5) {
   return `aggiornate ${ago(f.updated)}\nMercati: ${mk}\nTitoli:\n${nw}`;
 }
 
-/* ---------------- Riassunto di Jarvis (costa ~0,1 centesimi) ---------------- */
+/* ---------------- Riassunto di Mark 1 (costa ~0,1 centesimi) ---------------- */
 function renderBriefing() {
   const b = S.briefing; if (!b || b.date !== todayISO()) { $("#brief-body").innerHTML = ""; return; }
   $("#brief-body").innerHTML = md(b.text) + `<div class="muted small">Riassunto delle ${new Date(b.at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}</div>`;
@@ -593,7 +595,7 @@ le 4-5 più importanti tra mondo, Italia e Milano: cosa è successo e impatto.
   } catch (e) {
     $("#brief-body").textContent = explainError(e);
   }
-  btn.disabled = false; btn.textContent = "✦ Riassunto di Jarvis"; $("#orb").classList.remove("thinking");
+  btn.disabled = false; btn.textContent = "✦ Riassunto di Mark 1"; $("#orb").classList.remove("thinking");
 }
 $("#btn-brief").addEventListener("click", loadBriefing);
 
@@ -656,7 +658,7 @@ $("#btn-export").addEventListener("click", () => {
   const data = { tasks: S.tasks, memory: S.memory, settings: { ...S.settings, apiKey: "" }, exported: new Date().toISOString() };
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
-  a.download = `jarvis-backup-${todayISO()}.json`; a.click();
+  a.download = `mark1-backup-${todayISO()}.json`; a.click();
 });
 $("#file-import").addEventListener("change", async (e) => {
   const f = e.target.files[0]; if (!f) return;
@@ -669,8 +671,20 @@ $("#file-import").addEventListener("change", async (e) => {
   } catch { alertBubble("File di backup non valido."); }
 });
 
+/* ---------------- Cervello animato della Home ---------------- */
+let brain = null;
+try {
+  brain = startBrain($("#brain"));
+  // Quando Mark 1 pensa (pallino in alto che pulsa), anche il cervello si accende
+  new MutationObserver(() => {
+    const on = $("#orb").classList.contains("thinking");
+    brain.thinking(on); $("#brain-sub").textContent = on ? "sto pensando…" : S.settings.apiKey ? "online" : "tocca ⚙︎ per collegare il cervello";
+  }).observe($("#orb"), { attributes: true, attributeFilter: ["class"] });
+} catch (e) { console.warn("cervello", e); }
+
 /* ---------------- Avvio ---------------- */
 function boot() {
+  $("#brain-sub").textContent = S.settings.apiKey ? "online" : "tocca ⚙︎ per collegare il cervello";
   tick(); renderTasks(); renderMemory(); renderChat(); renderBriefing(); renderSpend(); loadWeather(); loadFeed(); loadMorning();
   $("#setup-card").hidden = !!S.settings.apiKey;
   loadAgenda(); if (google.ready()) { syncNow().then(syncTaskEvents); }
