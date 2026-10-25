@@ -183,12 +183,13 @@ Stile: chiaro, strutturato, senza fronzoli; usa elenchi e grassetti quando aiuta
 ${S.settings.name} vive a ${S.settings.city}; il focus locale è Milano, poi Roma e l'Italia.
 Ti occupi di: mercati finanziari, notizie, meteo, task lavorativi e personali, promemoria, scadenze, priorità.
 Nel contesto trovi le quotazioni e i titoli delle notizie del giorno (fonte ANSA, Yahoo Finance): usali per rispondere su mercati e notizie. Riporta: cosa è successo, impatto principale, cosa sapere. Non inventare dettagli che non hai.
-${S.settings.webSearch ? "Puoi usare la ricerca web solo quando il contesto non basta: ogni ricerca costa, quindi al massimo una o due." : "Non hai la ricerca web: se servono informazioni che non hai, dillo in una riga e suggerisci di attivarla nelle impostazioni."}
+${S.settings.webSearch ? "Puoi usare la ricerca web solo quando il contesto non basta: ogni ricerca costa, quindi al massimo una o due." : "Non hai la ricerca web a pagamento: per fatti, persone, luoghi e definizioni usa cerca_wikipedia (gratis). Se servono notizie dell'ultima ora che non sono nel contesto, dillo in una riga."}
 Sii proattivo: segnala brevemente rischi, opportunità e passi successivi.
 Strumenti personali:
 - save_memory: quando ${S.settings.name} ti dice qualcosa di duraturo su di sé (preferenze, persone, abitudini, lavoro), salvalo senza chiedere. Non salvare cose banali o temporanee.
 - add_task / complete_task: quando ti chiede di ricordare, fare o segnare qualcosa. Se dice "domani", "venerdì", ecc. calcola la data dalla data di oggi nel contesto.
 - forget_memory: se ti chiede di dimenticare qualcosa.
+- cerca_wikipedia: ricerca gratuita per fatti e conoscenze generali; preferiscila sempre alla ricerca web.
 All'inizio di ogni messaggio dell'utente trovi un blocco <contesto> con data e ora, meteo, task aperti e memoria: usalo, ma non ripeterlo se non serve.`;
 }
 
@@ -226,13 +227,27 @@ function tools(model) {
       due: { type: "string", description: "Scadenza AAAA-MM-GG, oppure stringa vuota se non c'è." },
       priority: { type: "string", enum: ["alta", "media", "bassa"] } }),
     strictTool("complete_task", "Segna come completato un task, dato il suo id.", { id: { type: "string" } }),
+    strictTool("cerca_wikipedia", "Cerca su Wikipedia in italiano (gratis). Usalo per fatti, persone, luoghi, definizioni, storia. Non ha notizie dell'ultima ora.", {
+      query: { type: "string", description: "Cosa cercare, poche parole chiave." } }),
   ];
 }
 
 // Esegue gli strumenti personali in locale. Ritorna [testo per Claude, riga di stato per l'utente].
-function runTool(name, input) {
+// Ricerca gratuita su Wikipedia italiana: costa solo i pochi token del testo letto.
+async function searchWikipedia(query) {
+  const url = "https://it.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrlimit=3" +
+    "&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exchars=900&gsrsearch=" + encodeURIComponent(query);
+  const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+  const pages = Object.values((await r.json()).query?.pages || {}).sort((a, b) => a.index - b.index);
+  return pages.map((p) => `## ${p.title}\n${p.extract || ""}\nFonte: ${p.fullurl}`).join("\n\n") || "Nessun risultato.";
+}
+
+async function runTool(name, input) {
   const str = (v) => (typeof v === "string" ? v.trim() : "");
   switch (name) {
+    case "cerca_wikipedia": { const q = str(input?.query); if (!q) return ["Errore: ricerca vuota", null, true];
+      try { return [await searchWikipedia(q), `📚 Cerco su Wikipedia: ${q}`]; }
+      catch { return ["Wikipedia non risponde in questo momento.", null, true]; } }
     case "save_memory": { const t = str(input?.text); if (!t) return ["Errore: testo mancante", null, true];
       const m = remember(t); return [`Salvato con id ${m.id}`, `🧠 Ricordato: ${t}`]; }
     case "forget_memory": return forget(str(input?.id)) ? ["Cancellato", "🧠 Ricordo cancellato"] : ["Errore: id non trovato", null, true];
@@ -353,10 +368,10 @@ async function ask(text) {
       save.convo();
       if (msg.stop_reason === "pause_turn") continue; // la ricerca web non ha finito: si riprende
       if (msg.stop_reason === "tool_use") {
-        const results = msg.content.filter((b) => b.type === "tool_use").map((b) => {
-          const [res, line, isErr] = runTool(b.name, b.input); if (line) status(line);
+        const results = await Promise.all(msg.content.filter((b) => b.type === "tool_use").map(async (b) => {
+          const [res, line, isErr] = await runTool(b.name, b.input); if (line) status(line);
           return { type: "tool_result", tool_use_id: b.id, content: res, ...(isErr ? { is_error: true } : {}) };
-        });
+        }));
         c.messages.push({ role: "user", content: results }); save.convo();
         if (answer && !answer.endsWith("\n")) answer += "\n\n";
         continue;

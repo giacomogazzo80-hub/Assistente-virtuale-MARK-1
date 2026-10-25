@@ -21,7 +21,8 @@ App per telefono (si installa dalla schermata Home, come un'app normale) con:
 | Meteo, mercati, notizie, task, memoria | **Gratis** (dati da Open-Meteo, Yahoo Finance e ANSA, aggiornati ogni ora da GitHub) |
 | Una domanda a Jarvis (Claude Haiku 5.5) | circa **0,05–0,1 centesimi** |
 | "Riassunto di Jarvis" delle notizie | circa **0,1 centesimi** |
-| Ricerca web (spenta di base) | circa **1 centesimo** a ricerca |
+| Ricerca su Wikipedia (fatti, persone, luoghi) | **Gratis** (solo i pochi token letti) |
+| Ricerca web completa (spenta di base) | circa **1 centesimo** a ricerca |
 
 Esempio: 5 domande al giorno per un mese costano circa **10–15 centesimi**.
 Nell'app c'è un **limite di spesa mensile** (di base 0,50 $): raggiunto il limite, Jarvis si ferma fino al mese dopo e il resto dell'app continua a funzionare gratis. La spesa del mese è sempre visibile nella chat.
