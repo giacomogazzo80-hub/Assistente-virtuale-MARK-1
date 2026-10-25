@@ -67,7 +67,10 @@ function md(src) {
 }
 
 /* ---------------- Navigazione ---------------- */
-function go(view) {
+function go(view, only = "") {
+  // Dashboard "solo una sezione" (es. solo Meteo) quando si entra da un settore della sfera
+  const dash = $("#view-dash"); dash.classList.toggle("solo", !!only);
+  dash.querySelectorAll(":scope > .card, :scope > .hello").forEach((c) => c.classList.toggle("solo-on", !!only && c.matches(only)));
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
   document.querySelectorAll(".drawer [data-go]").forEach((b) => b.classList.toggle("active", b.dataset.go === view));
   $("#composer").classList.toggle("hidden", view !== "chat");
@@ -694,7 +697,7 @@ let brain = null, refreshSub = () => {};
 try { startStars($("#stars")); } catch (e) { console.warn("stelle", e); }
 try {
   // I settori sulla sfera: girala e tocca un settore per entrarci
-  const card = (id) => () => { go("dash"); setTimeout(() => { const el = $(id); if (el && !el.hidden) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); };
+  const card = (id) => () => go("dash", id); // apre la Dashboard con solo quella sezione
   const SECTORS = [
     { label: "Chat", open: () => go("chat") },
     { label: "Dashboard", open: () => go("dash") },

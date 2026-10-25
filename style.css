@@ -184,3 +184,8 @@ body.on-chat { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 .drawer button { display: flex; align-items: center; gap: 14px; background: none; border: none; border-radius: 12px; padding: 12px; font-size: 18px; color: var(--muted); cursor: pointer; text-align: left; }
 .drawer button span { font-size: 15.5px; }
 .drawer button.active { color: var(--accent); background: #f0c04a14; }
+
+/* Dashboard con una sola sezione */
+#view-dash.solo > .card:not(.solo-on), #view-dash.solo > .hello { display: none; }
+#view-dash.solo > .card.solo-on { display: block !important; }
+.back-chip { margin: 0 0 12px; }
