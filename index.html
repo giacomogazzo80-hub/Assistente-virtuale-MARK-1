@@ -34,6 +34,16 @@
         <button class="btn primary" data-open-settings>Inserisci la chiave</button>
       </div>
 
+      <div class="card" id="morning-card" hidden>
+        <div class="card-head"><h2>☀️ Briefing del mattino</h2><span class="muted small" id="morning-time"></span></div>
+        <div class="md" id="morning-body"></div>
+      </div>
+
+      <div class="card" id="google-card" hidden>
+        <div class="card-head"><h2>Agenda e posta</h2></div>
+        <div id="agenda"></div>
+      </div>
+
       <div class="card" id="weather-card">
         <div class="card-head"><h2>Meteo</h2><span class="muted" id="weather-place"></span></div>
         <div id="weather-body" class="muted">Carico il meteo…</div>
@@ -139,6 +149,11 @@
       </label>
       <label class="check"><input type="checkbox" id="s-web"> Permetti a Jarvis di cercare sul web (circa 1 centesimo per ricerca)</label>
       <label class="check"><input type="checkbox" id="s-voice"> Jarvis legge ad alta voce le risposte</label>
+      <div id="s-google" class="g-box" hidden>
+        <b>Google</b> (Calendar, Gmail in sola lettura, sincronizzazione su Drive): <span id="s-google-status"></span>
+        <div class="muted small" id="sync-line"></div>
+        <button type="button" class="btn" id="btn-google-toggle">Collega Google</button>
+      </div>
       <div class="row">
         <button type="button" class="btn" id="btn-export">Backup dati</button>
         <label class="btn file">Ripristina<input type="file" id="file-import" accept="application/json" hidden></label>

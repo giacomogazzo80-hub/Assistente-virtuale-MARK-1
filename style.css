@@ -139,3 +139,11 @@ dialog label.check input { width: auto; margin: 0; }
 .news .when { color: var(--muted); font-size: 12px; }
 #brief-body:not(:empty) { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
 .spend { margin: -4px 0 10px; }
+
+/* agenda e posta */
+.agenda { list-style: none; padding: 0; margin: 0 0 8px; }
+.agenda li { padding: 6px 0; border-top: 1px solid var(--line); }
+.agenda li:first-child { border-top: none; }
+.agenda .when { color: var(--accent); font-size: 13px; margin-right: 6px; }
+.mail-line { font-size: 13.5px; color: var(--muted); padding-top: 8px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.g-box { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }

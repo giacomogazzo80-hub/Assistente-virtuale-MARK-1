@@ -26,6 +26,16 @@ jobs:
           node-version: 20
       - name: Scarica notizie e mercati
         run: node scripts/fetch-feed.mjs
+      - name: Briefing del mattino
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            npm install --silent --no-audit --no-fund --prefix "$RUNNER_TEMP/sdk" @anthropic-ai/sdk@0.133.0
+            export SDK_DIR="$RUNNER_TEMP/sdk"
+          fi
+          node scripts/briefing.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

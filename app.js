@@ -1,6 +1,7 @@
 // Jarvis: assistente personale. Tutti i dati restano su questo dispositivo;
 // l'unico servizio esterno con dati personali è la Claude API (il "cervello").
 import Anthropic from "./vendor/anthropic.js";
+import { google } from "./google.js";
 
 /* ---------------- Archivio locale ---------------- */
 const store = {
@@ -27,11 +28,13 @@ const S = {
   usage: store.get("usage", { month: "", usd: 0 }), // spesa API del mese
   feed: null, newsTab: "italia",
   noFallback: store.get("noFallback", false),
+  deleted: store.get("deleted", {}),   // {id: quando} per la sincronizzazione
+  agenda: [], mail: null, morning: null,
 };
 const save = {
   settings: () => store.set("settings", S.settings),
-  tasks: () => store.set("tasks", S.tasks),
-  memory: () => store.set("memory", S.memory),
+  tasks: () => { store.set("tasks", S.tasks); scheduleSync(); },
+  memory: () => { store.set("memory", S.memory); scheduleSync(); },
   convo: () => { if (!store.set("convo", S.convo)) newConversation(true); },
   briefing: () => store.set("briefing", S.briefing),
 };
@@ -138,18 +141,47 @@ function renderTasks() {
   $("#home-tasks").innerHTML = open.slice(0, 5).map(taskLi).join("") || `<li class="muted">Nessun task aperto. Puoi dire a Jarvis “ricordami di…”.</li>`;
 }
 function addTask(text, due = "", priority = "media") {
-  const t = { id: uid(), text: text.trim(), due: due || "", priority: PRIO[priority] != null ? priority : "media", done: false, created: Date.now() };
-  S.tasks.push(t); save.tasks(); renderTasks(); return t;
+  const t = { id: uid(), text: text.trim(), due: due || "", priority: PRIO[priority] != null ? priority : "media", done: false, created: Date.now(), updated: Date.now() };
+  S.tasks.push(t); save.tasks(); renderTasks(); syncTaskEvents(); return t;
 }
 function setTaskDone(id, done = true) {
   const t = S.tasks.find((x) => x.id === id); if (!t) return null;
-  t.done = done; t.doneAt = done ? Date.now() : null; save.tasks(); renderTasks(); return t;
+  t.done = done; t.doneAt = done ? Date.now() : null; t.updated = Date.now(); save.tasks(); renderTasks(); syncTaskEvents(); return t;
+}
+function deleteTask(id) {
+  const t = S.tasks.find((x) => x.id === id); if (!t) return;
+  if (t.eventId) { S.orphanEvents = [...(store.get("orphanEvents", [])), t.eventId]; store.set("orphanEvents", S.orphanEvents); }
+  S.tasks = S.tasks.filter((x) => x.id !== id); markDeleted(id); save.tasks(); renderTasks(); syncTaskEvents();
+}
+function markDeleted(id) { S.deleted[id] = Date.now(); store.set("deleted", S.deleted); }
+
+// Ogni task aperto con scadenza diventa un evento di Google Calendar con promemoria (notifica sul telefono).
+let syncingEvents = false;
+async function syncTaskEvents() {
+  if (!google.ready() || syncingEvents) return; syncingEvents = true;
+  try {
+    for (const id of store.get("orphanEvents", [])) await google.deleteEvent(id).catch(() => {});
+    store.set("orphanEvents", []);
+    for (const t of S.tasks) {
+      const want = !t.done && t.due && t.due >= todayISO();
+      if (want && !t.eventId) {
+        const ev = await google.createEvent({ title: "📝 " + t.text, date: t.due, time: "09:00", minutes: 15, reminders: [0, 24 * 60],
+          description: `Task di Jarvis (priorità ${t.priority})` });
+        t.eventId = ev.id; t.eventDue = t.due; t.updated = Date.now();
+      } else if (t.eventId && (!want || t.eventDue !== t.due)) {
+        await google.deleteEvent(t.eventId); t.eventId = null; t.updated = Date.now();
+        if (want) { syncingEvents = false; return syncTaskEvents(); }
+      }
+    }
+    store.set("tasks", S.tasks); scheduleSync();
+  } catch (e) { console.warn("Calendar", e); }
+  syncingEvents = false;
 }
 document.addEventListener("click", (e) => {
   const btn = e.target.closest(".task-list [data-act]"); if (!btn) return;
   const id = btn.closest("li").dataset.id; const t = S.tasks.find((x) => x.id === id); if (!t) return;
   if (btn.dataset.act === "toggle") setTaskDone(id, !t.done);
-  else { S.tasks = S.tasks.filter((x) => x.id !== id); save.tasks(); renderTasks(); }
+  else deleteTask(id);
 });
 $("#task-form").addEventListener("submit", (e) => {
   e.preventDefault(); addTask($("#task-text").value, $("#task-due").value, $("#task-prio").value);
@@ -161,8 +193,8 @@ function renderMemory() {
   $("#mem-list").innerHTML = S.memory.map((m) => `<li data-id="${m.id}"><span>${esc(m.text)}</span><button class="del" aria-label="Dimentica">✕</button></li>`).join("")
     || `<li class="muted">Ancora vuota.</li>`;
 }
-function remember(text) { const m = { id: uid(), text: text.trim(), created: Date.now() }; S.memory.push(m); save.memory(); renderMemory(); return m; }
-function forget(id) { const n = S.memory.length; S.memory = S.memory.filter((m) => m.id !== id); save.memory(); renderMemory(); return S.memory.length < n; }
+function remember(text) { const m = { id: uid(), text: text.trim(), created: Date.now(), updated: Date.now() }; S.memory.push(m); save.memory(); renderMemory(); return m; }
+function forget(id) { const n = S.memory.length; S.memory = S.memory.filter((m) => m.id !== id); markDeleted(id); save.memory(); renderMemory(); return S.memory.length < n; }
 $("#mem-list").addEventListener("click", (e) => { const li = e.target.closest(".del") && e.target.closest("li"); if (li) forget(li.dataset.id); });
 $("#mem-form").addEventListener("submit", (e) => { e.preventDefault(); remember($("#mem-text").value); e.target.reset(); });
 
@@ -191,6 +223,9 @@ Strumenti personali:
 - forget_memory: se ti chiede di dimenticare qualcosa.
 - cerca_notizie: ricerca gratuita nelle notizie di oggi; usala per l'attualità prima di dire che non sai.
 - cerca_wikipedia: ricerca gratuita per fatti e conoscenze generali; preferiscila sempre alla ricerca web.
+${google.ready() ? `- calendario / crea_evento: agenda Google di ${S.settings.name}. Prima di creare un evento conferma data e ora se non sono chiare.
+- leggi_email: legge (solo lettura) le email di Gmail; riassumi mittente, oggetto e cosa serve fare. Non puoi inviare email.
+- I task con scadenza finiscono da soli in Google Calendar con un promemoria.` : "Google (Calendar, Gmail) non è collegato in questo momento: se serve, suggerisci di collegarlo dalle impostazioni."}
 All'inizio di ogni messaggio dell'utente trovi un blocco <contesto> con data e ora, meteo, task aperti e memoria: usalo, ma non ripeterlo se non serve.`;
 }
 
@@ -202,6 +237,8 @@ function contextBlock() {
 Ora: ${now.toLocaleString("it-IT", { timeZone: "Europe/Rome", dateStyle: "full", timeStyle: "short" })} (oggi ${todayISO()})
 Meteo: ${weatherText || "non disponibile"}
 Notizie e mercati: ${feedSummary(4)}
+Agenda (Google Calendar): ${google.ready() ? (S.agenda.map((e) => `${fmtWhen(e)} ${e.title}`).join("; ") || "nessun impegno oggi e domani") : "non collegata"}
+Email non lette: ${S.mail ? `${S.mail.total} (prime: ${S.mail.items.slice(0, 3).map((m) => `${m.from}: ${m.subject}`).join(" | ")})` : "non disponibile"}
 Task aperti:
 ${tasks}
 Memoria su ${S.settings.name}:
@@ -230,6 +267,15 @@ function tools(model) {
     strictTool("complete_task", "Segna come completato un task, dato il suo id.", { id: { type: "string" } }),
     strictTool("cerca_notizie", "Cerca tra le notizie di oggi (ANSA, Google News, Corriere Milano, Sole 24 Ore, GDELT), gratis. Usalo quando l'utente chiede di un argomento di attualità non presente nei titoli del contesto.", {
       query: { type: "string", description: "Parole chiave, es. 'BCE tassi' o 'sciopero Milano'." } }),
+    ...(google.ready() ? [
+      strictTool("calendario", "Elenca gli eventi di Google Calendar dei prossimi giorni.", { giorni: { type: "integer", description: "Quanti giorni da oggi, da 1 a 30." } }),
+      strictTool("crea_evento", "Crea un evento in Google Calendar con promemoria.", {
+        titolo: { type: "string" }, data: { type: "string", description: "AAAA-MM-GG" },
+        ora: { type: "string", description: "HH:MM, oppure stringa vuota per tutto il giorno" },
+        durata_minuti: { type: "integer" }, promemoria_minuti: { type: "integer", description: "Minuti prima per la notifica, es. 30" } }),
+      strictTool("leggi_email", "Legge le email di Gmail (solo lettura). Restituisce mittente, oggetto e anteprima.", {
+        ricerca: { type: "string", description: "Filtro Gmail, es. 'is:unread newer_than:1d' o 'from:banca'. Stringa vuota = non lette recenti." } }),
+    ] : []),
     strictTool("cerca_wikipedia", "Cerca su Wikipedia in italiano (gratis). Usalo per fatti, persone, luoghi, definizioni, storia. Non ha notizie dell'ultima ora.", {
       query: { type: "string", description: "Cosa cercare, poche parole chiave." } }),
   ];
@@ -266,6 +312,19 @@ async function searchNews(query) {
 async function runTool(name, input) {
   const str = (v) => (typeof v === "string" ? v.trim() : "");
   switch (name) {
+    case "calendario": { const n = Math.min(Math.max(+input?.giorni || 7, 1), 30);
+      try { const ev = await google.events(new Date().toISOString(), new Date(Date.now() + n * 864e5).toISOString(), 40);
+        return [ev.map((e) => `- ${fmtWhen(e)} ${e.title}${e.place ? " @ " + e.place : ""}`).join("\n") || "Nessun evento.", `📅 Guardo l'agenda (${n} giorni)`]; }
+      catch (e) { return [googleErr(e), null, true]; } }
+    case "crea_evento": { const d = str(input?.data), t = str(input?.ora);
+      if (!str(input?.titolo) || !/^\d{4}-\d{2}-\d{2}$/.test(d) || (t && !/^\d{2}:\d{2}$/.test(t))) return ["Errore: titolo, data o ora non validi", null, true];
+      try { await google.createEvent({ title: str(input.titolo), date: d, time: t, minutes: +input?.durata_minuti || 60, reminders: [Math.max(+input?.promemoria_minuti || 30, 0)] });
+        loadAgenda(); return ["Evento creato", `📅 Evento creato: ${str(input.titolo)} (${d}${t ? " " + t : ""})`]; }
+      catch (e) { return [googleErr(e), null, true]; } }
+    case "leggi_email": {
+      try { const m = await google.mails(str(input?.ricerca) || undefined, 10);
+        return [m.items.map((x) => `- Da ${x.from} | ${x.subject} | ${x.snippet}`).join("\n") || "Nessuna email trovata.", "✉️ Leggo la posta"]; }
+      catch (e) { return [googleErr(e), null, true]; } }
     case "cerca_notizie": { const q = str(input?.query); if (!q) return ["Errore: ricerca vuota", null, true];
       return [await searchNews(q), `📰 Cerco nelle notizie: ${q}`]; }
     case "cerca_wikipedia": { const q = str(input?.query); if (!q) return ["Errore: ricerca vuota", null, true];
@@ -282,6 +341,66 @@ async function runTool(name, input) {
       return t ? ["Completato", `✅ Completato: ${t.text}`] : ["Errore: id non trovato", null, true]; }
     default: return [`Strumento sconosciuto: ${name}`, null, true];
   }
+}
+
+/* ---------------- Google: agenda, posta, sincronizzazione ---------------- */
+const fmtWhen = (e) => {
+  const d = new Date(e.allDay ? e.start + "T12:00" : e.start);
+  const day = e.start.slice(0, 10) === todayISO() ? "oggi" : d.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" });
+  return e.allDay ? `${day} (tutto il giorno)` : `${day} ${d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`;
+};
+const googleErr = (e) => e.message === "GOOGLE_EXPIRED" ? "Il collegamento con Google è scaduto: riapri l'app per rinnovarlo." : "Google non risponde: " + e.message;
+async function loadAgenda() {
+  const box = $("#agenda");
+  if (!google.configured()) { $("#google-card").hidden = true; return; }
+  $("#google-card").hidden = false;
+  if (!google.ready()) {
+    box.innerHTML = `<p class="muted">${google.linked() ? "Il collegamento con Google è da rinnovare." : "Collega Google per vedere agenda e posta, ricevere i promemoria dei task e sincronizzare i dati."}</p>
+      <button class="btn primary" id="btn-google">${google.linked() ? "Rinnova collegamento" : "Collega Google"}</button>`;
+    $("#btn-google").onclick = () => { google.clearNeedsLogin(); google.connect(false); }; return;
+  }
+  try {
+    const end = new Date(); end.setDate(end.getDate() + 2); end.setHours(0, 0, 0, 0);
+    S.agenda = await google.events(new Date(new Date().setHours(0, 0, 0, 0)).toISOString(), end.toISOString());
+    try { S.mail = await google.mails(undefined, 5); } catch { S.mail = null; }
+    box.innerHTML = `<ul class="agenda">${S.agenda.map((e) => `<li><span class="when">${esc(fmtWhen(e))}</span> ${esc(e.title)}</li>`).join("") || `<li class="muted">Nessun impegno oggi e domani.</li>`}</ul>` +
+      (S.mail ? `<div class="mail-line">✉️ <b>${S.mail.total}</b> email non lette${S.mail.items[0] ? ` · ultima da ${esc(S.mail.items[0].from)}: ${esc(S.mail.items[0].subject)}` : ""}</div>` : "");
+  } catch (e) { box.innerHTML = `<p class="muted">${esc(googleErr(e))}</p>`; }
+}
+
+// Sincronizzazione: task e memoria in un file privato su Google Drive. Vince la modifica più recente.
+let syncTimer = null, driveId = null;
+function scheduleSync() { if (google.ready()) { clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 1500); } }
+function mergeLists(local, remote, deleted) {
+  const byId = new Map();
+  for (const x of [...remote, ...local]) { const cur = byId.get(x.id); if (!cur || (x.updated || x.created || 0) >= (cur.updated || cur.created || 0)) byId.set(x.id, x); }
+  return [...byId.values()].filter((x) => !(deleted[x.id] > (x.updated || x.created || 0))).sort((a, b) => a.created - b.created);
+}
+async function syncNow() {
+  if (!google.ready()) return;
+  try {
+    const { id, data } = await google.loadData(); driveId = id;
+    if (data) {
+      S.deleted = { ...data.deleted, ...S.deleted };
+      for (const [k, v] of Object.entries(data.deleted || {})) S.deleted[k] = Math.max(v, S.deleted[k] || 0);
+      S.tasks = mergeLists(S.tasks, data.tasks || [], S.deleted);
+      S.memory = mergeLists(S.memory, data.memory || [], S.deleted);
+      store.set("tasks", S.tasks); store.set("memory", S.memory); store.set("deleted", S.deleted);
+      renderTasks(); renderMemory();
+    }
+    await google.saveData(driveId, { tasks: S.tasks, memory: S.memory, deleted: S.deleted, saved: Date.now() });
+    $("#sync-line") && ($("#sync-line").textContent = "Sincronizzato con Google Drive alle " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+  } catch (e) { console.warn("Sync", e); }
+}
+
+/* ---------------- Briefing del mattino (preparato da GitHub alle 7) ---------------- */
+async function loadMorning() {
+  try {
+    const r = await fetch("data/briefing.json?t=" + Date.now()); if (!r.ok) throw 0;
+    const b = await r.json(); if (b.date !== todayISO() || !b.text) throw 0;
+    $("#morning-card").hidden = false; $("#morning-body").innerHTML = md(b.text);
+    $("#morning-time").textContent = "preparato alle " + new Date(b.at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  } catch { $("#morning-card").hidden = true; }
 }
 
 /* ---------------- Spesa ---------------- */
@@ -509,6 +628,9 @@ function openSettings() {
   $("#s-key").value = s.apiKey; $("#s-name").value = s.name; $("#s-city").value = s.city;
   $("#s-model").value = s.model; $("#s-voice").checked = !!s.voice;
   $("#s-cap").value = s.monthlyCap; $("#s-web").checked = !!s.webSearch; renderSpend();
+  $("#s-google").hidden = !google.configured();
+  $("#s-google-status").textContent = google.ready() ? "Collegato ✓" : google.linked() ? "Da rinnovare" : "Non collegato";
+  $("#btn-google-toggle").textContent = google.linked() ? "Scollega Google" : "Collega Google";
   $("#settings").showModal();
 }
 $("#btn-settings").addEventListener("click", openSettings);
@@ -526,6 +648,9 @@ $("#settings").addEventListener("close", async () => {
     } catch { alertBubble("Non riesco a cercare la città adesso."); }
   }
   save.settings(); boot();
+});
+$("#btn-google-toggle").addEventListener("click", () => {
+  if (google.linked()) { google.disconnect(); $("#settings").close(); boot(); } else google.connect(false);
 });
 $("#btn-export").addEventListener("click", () => {
   const data = { tasks: S.tasks, memory: S.memory, settings: { ...S.settings, apiKey: "" }, exported: new Date().toISOString() };
@@ -546,9 +671,12 @@ $("#file-import").addEventListener("change", async (e) => {
 
 /* ---------------- Avvio ---------------- */
 function boot() {
-  tick(); renderTasks(); renderMemory(); renderChat(); renderBriefing(); renderSpend(); loadWeather(); loadFeed();
+  tick(); renderTasks(); renderMemory(); renderChat(); renderBriefing(); renderSpend(); loadWeather(); loadFeed(); loadMorning();
   $("#setup-card").hidden = !!S.settings.apiKey;
+  loadAgenda(); if (google.ready()) { syncNow().then(syncTaskEvents); }
 }
-boot();
-setInterval(() => { loadWeather(); loadFeed(); }, 30 * 60 * 1000);
+// Ritorno da Google con il permesso, oppure rinnovo silenzioso se è scaduto.
+const back = google.configured() ? google.handleRedirect() : null;
+if (!(google.configured() && !back && google.maybeRefresh())) boot();
+setInterval(() => { loadWeather(); loadFeed(); loadAgenda(); }, 30 * 60 * 1000);
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js");
