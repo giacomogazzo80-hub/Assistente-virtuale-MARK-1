@@ -14,7 +14,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { background: var(--bg); }
+html { background: var(--bg); overflow-x: hidden; }
 body { margin: 0; color: var(--text); }
 body {
   font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -150,12 +150,14 @@ dialog label.check input { width: auto; margin: 0; }
 .g-box { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 
 /* Home: il cervello di Mark 1 */
-.brain-wrap { position: relative; height: calc(100dvh - 180px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height: 360px; margin: 0 -16px; }
+.brain-wrap { position: relative; height: calc(100dvh - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height: 420px;
+  width: 100vw; margin-left: calc(50% - 50vw); }
+#brain { cursor: grab; } #brain:active { cursor: grabbing; }
 #brain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.brain-title { position: absolute; left: 0; right: 0; bottom: 4%; text-align: center; pointer-events: none; }
+.brain-title { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; pointer-events: none; }
 .brain-title h1 { margin: 0; font-size: 38px; font-weight: 200; letter-spacing: .45em; padding-left: .45em; color: #ffffff;
   text-shadow: 0 0 18px #ffffff55, 0 0 42px #f0c04a33; animation: glow 4s ease-in-out infinite; }
-.brain-sub { margin-top: 6px; font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+.brain-sub { margin-top: 6px; font-size: 12px; letter-spacing: .25em; min-height: 1.4em; text-transform: uppercase; color: var(--muted); }
 @keyframes glow { 50% { text-shadow: 0 0 26px #ffffff88, 0 0 60px #f0c04a55; } }
 @media (prefers-reduced-motion: reduce) { .brain-title h1 { animation: none; } }
 
@@ -165,7 +167,7 @@ dialog label.check input { width: auto; margin: 0; }
 body.on-chat { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 
 /* pulsante Chat in Home */
-.chat-cta { display: block; margin: 8px auto 0; padding: 12px 34px; border-radius: 999px; border: 1px solid #f0c04a88;
+.chat-cta { display: block; margin: 14px auto 0; padding: 12px 34px; border-radius: 999px; border: 1px solid #f0c04a88;
   background: #f0c04a14; color: #fff; font-size: 16px; letter-spacing: .12em; cursor: pointer;
   box-shadow: 0 0 18px #f0c04a33, inset 0 0 12px #f0c04a22; backdrop-filter: blur(6px); }
 .chat-cta:active { transform: scale(.97); }

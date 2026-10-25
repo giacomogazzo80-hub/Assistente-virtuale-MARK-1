@@ -6,8 +6,8 @@ export function startStars(canvas) {
   let W = 0, H = 0, stars = [], shoot = null, raf = 0, last = 0, nebula = null;
 
   function build() {
-    const dpr = Math.min(devicePixelRatio || 1, 2);
     W = innerWidth; H = innerHeight;
+    const dpr = Math.min(devicePixelRatio || 1, W > 900 ? 1 : 2); // sui computer basta meno risoluzione, così resta fluido
     canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const n = Math.round((W * H) / 2600);
     stars = Array.from({ length: n }, () => ({

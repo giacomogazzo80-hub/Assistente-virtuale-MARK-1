@@ -60,12 +60,12 @@
         <div id="weather-body" class="muted">Carico il meteo…</div>
       </div>
 
-      <div class="card">
+      <div class="card" id="markets-card">
         <div class="card-head"><h2>Mercati</h2><span class="muted small" id="feed-time"></span></div>
         <div class="mkts" id="markets"><span class="muted">Carico le quotazioni…</span></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="news-card">
         <div class="card-head"><h2>Notizie</h2>
           <div class="seg" id="news-tabs">
             <button data-k="italia" class="on">Italia</button><button data-k="milano">Milano</button><button data-k="mondo">Mondo</button><button data-k="economia">Economia</button>
@@ -174,7 +174,7 @@
         <button type="button" class="btn" id="btn-export">Backup dati</button>
         <label class="btn file">Ripristina<input type="file" id="file-import" accept="application/json" hidden></label>
       </div>
-      <div class="muted small">Versione <span id="app-version">10</span> · <button type="button" class="chip" id="btn-update">Aggiorna app</button></div>
+      <div class="muted small">Versione <span id="app-version">11</span> · <button type="button" class="chip" id="btn-update">Aggiorna app</button></div>
       <div class="row end">
         <button value="cancel" class="btn">Chiudi</button>
         <button value="save" class="btn primary" id="btn-save">Salva</button>

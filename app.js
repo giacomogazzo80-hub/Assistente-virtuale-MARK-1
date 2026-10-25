@@ -74,7 +74,7 @@ function go(view) {
   document.body.classList.toggle("on-chat", view === "chat");
   menu(false);
   if (view === "chat") scrollChat();
-  if (view === "home") brain?.intro();
+  if (view === "home") { brain?.resize(); brain?.intro(); }
   window.scrollTo({ top: view === "chat" ? document.body.scrollHeight : 0 });
 }
 // Menu laterale
@@ -690,20 +690,38 @@ $("#file-import").addEventListener("change", async (e) => {
 });
 
 /* ---------------- Cervello animato della Home ---------------- */
-let brain = null;
+let brain = null, refreshSub = () => {};
 try { startStars($("#stars")); } catch (e) { console.warn("stelle", e); }
 try {
-  brain = startBrain($("#brain"));
-  // Quando Mark 1 pensa (pallino in alto che pulsa), anche il cervello si accende
-  new MutationObserver(() => {
+  // I settori sulla sfera: girala e tocca un settore per entrarci
+  const card = (id) => () => { go("dash"); setTimeout(() => { const el = $(id); if (el && !el.hidden) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); };
+  const SECTORS = [
+    { label: "Chat", open: () => go("chat") },
+    { label: "Dashboard", open: () => go("dash") },
+    { label: "Notizie", open: card("#news-card") },
+    { label: "Mercati", open: card("#markets-card") },
+    { label: "Meteo", open: card("#weather-card") },
+    { label: "Agenda", open: card("#google-card") },
+    { label: "Task", open: () => go("tasks") },
+    { label: "Memoria", open: () => go("memory") },
+    { label: "Impostazioni", open: () => openSettings() },
+  ];
+  let focused = null;
+  const sub = () => {
     const on = $("#orb").classList.contains("thinking");
-    brain.thinking(on); $("#brain-sub").textContent = on ? "sto pensando…" : S.settings.apiKey ? "online" : "tocca ⚙︎ per collegare il cervello";
-  }).observe($("#orb"), { attributes: true, attributeFilter: ["class"] });
+    $("#brain-sub").textContent = on ? "sto pensando…" : !S.settings.apiKey ? "tocca ⚙︎ per collegare il cervello"
+      : focused ? `${focused.label} · tocca per entrare` : "gira la sfera con il dito";
+  };
+  refreshSub = sub;
+  brain = startBrain($("#brain"), { sectors: SECTORS, onOpen: (s) => s.open(), onFocus: (s) => { focused = s; sub(); } });
+  // Quando Mark 1 pensa (pallino in alto che pulsa), anche la sfera si accende
+  new MutationObserver(() => { brain.thinking($("#orb").classList.contains("thinking")); sub(); })
+    .observe($("#orb"), { attributes: true, attributeFilter: ["class"] });
 } catch (e) { console.warn("cervello", e); }
 
 /* ---------------- Avvio ---------------- */
 function boot() {
-  $("#brain-sub").textContent = S.settings.apiKey ? "online" : "tocca ⚙︎ per collegare il cervello";
+  refreshSub();
   tick(); renderTasks(); renderMemory(); renderChat(); renderBriefing(); renderSpend(); loadWeather(); loadFeed(); loadMorning();
   $("#setup-card").hidden = !!S.settings.apiKey;
   loadAgenda(); if (google.ready()) { syncNow().then(syncTaskEvents); }
