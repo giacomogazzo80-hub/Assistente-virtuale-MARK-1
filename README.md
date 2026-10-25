@@ -18,10 +18,10 @@ App per telefono (si installa dalla schermata Home, come un'app normale) con:
 
 | Cosa | Costo |
 |---|---|
-| Meteo, mercati, notizie, task, memoria | **Gratis** (dati da Open-Meteo, Yahoo Finance e ANSA, aggiornati ogni ora da GitHub) |
+| Meteo, mercati, notizie, task, memoria | **Gratis** (Open-Meteo, Yahoo Finance, CoinGecko, BCE, ANSA, Google News, Corriere Milano, Sole 24 Ore, GDELT: aggiornati ogni 30 minuti da GitHub) |
 | Una domanda a Jarvis (Claude Haiku 5.5) | circa **0,05–0,1 centesimi** |
 | "Riassunto di Jarvis" delle notizie | circa **0,1 centesimi** |
-| Ricerca su Wikipedia (fatti, persone, luoghi) | **Gratis** (solo i pochi token letti) |
+| Ricerca nelle notizie e su Wikipedia | **Gratis** (solo i pochi token letti) |
 | Ricerca web completa (spenta di base) | circa **1 centesimo** a ricerca |
 
 Esempio: 5 domande al giorno per un mese costano circa **10–15 centesimi**.

@@ -1,5 +1,5 @@
 // Tiene l'app disponibile anche offline. Cambia VERSION per forzare l'aggiornamento.
-const VERSION = "jarvis-v3";
+const VERSION = "jarvis-v4";
 const SHELL = ["./", "index.html", "style.css", "app.js", "vendor/anthropic.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png"];
 self.addEventListener("install", (e) => e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", (e) => e.waitUntil(

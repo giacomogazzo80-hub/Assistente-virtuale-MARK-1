@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "15 5-22 * * *"   # ogni ora dalle 6/7 alle 23/24 (ora italiana)
+    - cron: "*/30 5-22 * * *"   # ogni 30 minuti dalle 6/7 alle 23/24 (ora italiana)
   workflow_dispatch:
 permissions:
   contents: read

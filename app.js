@@ -182,13 +182,14 @@ function systemPrompt() {
 Stile: chiaro, strutturato, senza fronzoli; usa elenchi e grassetti quando aiutano, niente tabelle. Su telefono: risposte brevi salvo richiesta contraria.
 ${S.settings.name} vive a ${S.settings.city}; il focus locale è Milano, poi Roma e l'Italia.
 Ti occupi di: mercati finanziari, notizie, meteo, task lavorativi e personali, promemoria, scadenze, priorità.
-Nel contesto trovi le quotazioni e i titoli delle notizie del giorno (fonte ANSA, Yahoo Finance): usali per rispondere su mercati e notizie. Riporta: cosa è successo, impatto principale, cosa sapere. Non inventare dettagli che non hai.
-${S.settings.webSearch ? "Puoi usare la ricerca web solo quando il contesto non basta: ogni ricerca costa, quindi al massimo una o due." : "Non hai la ricerca web a pagamento: per fatti, persone, luoghi e definizioni usa cerca_wikipedia (gratis). Se servono notizie dell'ultima ora che non sono nel contesto, dillo in una riga."}
+Nel contesto trovi le quotazioni e i titoli delle notizie del giorno (fonti: ANSA, Google News, Corriere Milano, Sole 24 Ore, GDELT, Yahoo Finance, CoinGecko, BCE): usali per rispondere su mercati e notizie. Riporta: cosa è successo, impatto principale, cosa sapere. Non inventare dettagli che non hai.
+${S.settings.webSearch ? "Puoi usare la ricerca web solo quando il contesto non basta: ogni ricerca costa, quindi al massimo una o due." : "Non hai la ricerca web a pagamento: per fatti, persone, luoghi e definizioni usa cerca_wikipedia (gratis). Per l'attualità usa cerca_notizie (gratis)."}
 Sii proattivo: segnala brevemente rischi, opportunità e passi successivi.
 Strumenti personali:
 - save_memory: quando ${S.settings.name} ti dice qualcosa di duraturo su di sé (preferenze, persone, abitudini, lavoro), salvalo senza chiedere. Non salvare cose banali o temporanee.
 - add_task / complete_task: quando ti chiede di ricordare, fare o segnare qualcosa. Se dice "domani", "venerdì", ecc. calcola la data dalla data di oggi nel contesto.
 - forget_memory: se ti chiede di dimenticare qualcosa.
+- cerca_notizie: ricerca gratuita nelle notizie di oggi; usala per l'attualità prima di dire che non sai.
 - cerca_wikipedia: ricerca gratuita per fatti e conoscenze generali; preferiscila sempre alla ricerca web.
 All'inizio di ogni messaggio dell'utente trovi un blocco <contesto> con data e ora, meteo, task aperti e memoria: usalo, ma non ripeterlo se non serve.`;
 }
@@ -227,6 +228,8 @@ function tools(model) {
       due: { type: "string", description: "Scadenza AAAA-MM-GG, oppure stringa vuota se non c'è." },
       priority: { type: "string", enum: ["alta", "media", "bassa"] } }),
     strictTool("complete_task", "Segna come completato un task, dato il suo id.", { id: { type: "string" } }),
+    strictTool("cerca_notizie", "Cerca tra le notizie di oggi (ANSA, Google News, Corriere Milano, Sole 24 Ore, GDELT), gratis. Usalo quando l'utente chiede di un argomento di attualità non presente nei titoli del contesto.", {
+      query: { type: "string", description: "Parole chiave, es. 'BCE tassi' o 'sciopero Milano'." } }),
     strictTool("cerca_wikipedia", "Cerca su Wikipedia in italiano (gratis). Usalo per fatti, persone, luoghi, definizioni, storia. Non ha notizie dell'ultima ora.", {
       query: { type: "string", description: "Cosa cercare, poche parole chiave." } }),
   ];
@@ -242,9 +245,29 @@ async function searchWikipedia(query) {
   return pages.map((p) => `## ${p.title}\n${p.extract || ""}\nFonte: ${p.fullurl}`).join("\n\n") || "Nessun risultato.";
 }
 
+// Ricerca notizie gratuita: prima tra le notizie già scaricate, poi (se il server lo permette) su GDELT in diretta.
+async function searchNews(query) {
+  const words = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+  const all = Object.values(S.feed?.news || {}).flat();
+  const seen = new Set();
+  const local = all.map((n) => ({ n, score: words.filter((w) => n.title.toLowerCase().includes(w)).length }))
+    .filter((x) => x.score && !seen.has(x.n.title) && seen.add(x.n.title))
+    .sort((a, b) => b.score - a.score || (b.n.date || "").localeCompare(a.n.date || "")).slice(0, 8).map((x) => x.n);
+  let live = [];
+  try {
+    const r = await fetch("https://api.gdeltproject.org/api/v2/doc/doc?mode=artlist&format=json&maxrecords=8&sort=datedesc&timespan=1d&query=" +
+      encodeURIComponent(`${query} sourcelang:italian`), { signal: AbortSignal.timeout(8000) });
+    if (r.ok) live = ((await r.json()).articles || []).map((a) => ({ title: a.title, link: a.url, source: a.domain, date: null }));
+  } catch { /* GDELT non raggiungibile dal browser: restano le notizie già scaricate */ }
+  const rows = [...local, ...live.filter((a) => !seen.has(a.title))].slice(0, 12);
+  return rows.map((n) => `- ${n.title} (${n.source || "?"}${n.date ? ", " + ago(n.date) : ""}) ${n.link}`).join("\n") || "Nessuna notizia trovata su questo argomento oggi.";
+}
+
 async function runTool(name, input) {
   const str = (v) => (typeof v === "string" ? v.trim() : "");
   switch (name) {
+    case "cerca_notizie": { const q = str(input?.query); if (!q) return ["Errore: ricerca vuota", null, true];
+      return [await searchNews(q), `📰 Cerco nelle notizie: ${q}`]; }
     case "cerca_wikipedia": { const q = str(input?.query); if (!q) return ["Errore: ricerca vuota", null, true];
       try { return [await searchWikipedia(q), `📚 Cerco su Wikipedia: ${q}`]; }
       catch { return ["Wikipedia non risponde in questo momento.", null, true]; } }
@@ -416,7 +439,7 @@ function renderFeed() {
   }).join("") || `<span class="muted">Quotazioni non disponibili.</span>`;
   const list = f.news[S.newsTab] || [];
   $("#news").innerHTML = list.slice(0, 6).map((n) => `<li><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.title)}</a>
-    ${n.date ? `<div class="when">${ago(n.date)}</div>` : ""}</li>`).join("") || `<li class="muted">Nessuna notizia.</li>`;
+    <div class="when">${[n.source, n.date && ago(n.date)].filter(Boolean).map(esc).join(" · ")}</div></li>`).join("") || `<li class="muted">Nessuna notizia.</li>`;
   document.querySelectorAll("#news-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.k === S.newsTab));
 }
 $("#news-tabs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { S.newsTab = b.dataset.k; renderFeed(); } });
