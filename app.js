@@ -493,7 +493,9 @@ async function ask(text) {
   text = text.trim(); if (!text || busy) return;
   if (!S.settings.apiKey) { openSettings(); return; }
   busy = true; $("#orb").classList.add("thinking");
-  ensureConversation(); go("chat");
+  // Dalla Home resta sul pianeta che "pensa", poi apre la chat con la risposta
+  const fromHome = $("#view-home").classList.contains("active");
+  ensureConversation(); if (!fromHome) go("chat");
   const c = S.convo;
   if (!c.view.length) $("#chat").innerHTML = "";
   c.view.push({ role: "user", text }); bubble("user", esc(text));
@@ -530,6 +532,7 @@ async function ask(text) {
   if (!answer) { answer = "Fatto."; paint(); }
   c.view.push({ role: "bot", text: answer, status: statuses, error }); save.convo();
   busy = false; $("#orb").classList.remove("thinking");
+  if (fromHome && $("#view-home").classList.contains("active")) go("chat");
   if (S.settings.voice && !error) speak(answer);
 }
 
