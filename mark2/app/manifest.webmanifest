@@ -1,6 +1,6 @@
 {
-  "name": "Mark 2 – Assistente personale",
-  "short_name": "Mark 2",
+  "name": "Mark – Assistente personale",
+  "short_name": "Mark",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

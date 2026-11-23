@@ -1,4 +1,4 @@
-// Mark 2 – il "cervello" (Tappa 2 della guida).
+// Mark – il "cervello" (Tappa 2 della guida).
 // Route:
 //   POST /api/chat          { message, sessionId? }  → testo in streaming (text/plain, a pezzi)
 //   GET  /api/session       → { sessionId }          id di sessione comune a PC e telefono
@@ -20,7 +20,7 @@ export default {
     const cors = corsHeaders(request, env);
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-    if (url.pathname === "/api/health") return json({ ok: true, name: env.ASSISTANT_NAME || "Mark 2" }, 200, cors);
+    if (url.pathname === "/api/health") return json({ ok: true, name: env.ASSISTANT_NAME || "Mark" }, 200, cors);
     if (!url.pathname.startsWith("/api/")) return new Response("Not found", { status: 404, headers: cors });
     if (!authorized(request, env)) return json({ error: "Non autorizzato" }, 401, cors);
 

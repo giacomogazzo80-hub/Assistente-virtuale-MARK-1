@@ -19,8 +19,8 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 
 ## Dove si cambiano nome e aspetto
 
-- App: `mark2/app/config.js` (`NAME`, `ACCENT`, `VERSION`) + `manifest.webmanifest` + `index.html` (titolo) + `icon.svg`.
-- Personaggio: `[vars]` in `mark2/worker/wrangler.toml` (`ASSISTANT_NAME`, `PERSONALITY`, `USER_NAME`, `TIMEZONE`, `MODEL`).
+- App: `mark2/app/config.js` (`NAME`, `ACCENT`, `VERSION`), il pianeta in `brain.js` (colori `GOLD`/`LIGHT`) + `manifest.webmanifest` + `index.html` (titolo) + `icon.svg`.
+- Personaggio: `[vars]` in `mark2/worker/wrangler.toml` (`ASSISTANT_NAME`, `PERSONALITY`, `USER_NAME`, `VOICE`, `WEATHER_CITIES`, `TIMEZONE`, `MODEL`).
 - Il testo del system prompt sta in `mark2/worker/src/persona.js`: tienilo breve (ogni token rallenta la voce).
 
 ## Regole
@@ -35,7 +35,7 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 
 | Tappa | Stato |
 |---|---|
-| 1. PWA minima | Fatta (23/11/2026): cervello animato, chat testuale in streaming, impostazioni, service worker network-first |
+| 1. PWA minima | Fatta (23/11/2026): pianeta di neuroni di Mark 1, chat testuale in streaming, impostazioni, service worker network-first |
 | 2. Cervello `/api/chat` | Fatta (23/11/2026): streaming, memoria KV, sessione comune. Da pubblicare su Cloudflare |
 | 3. Voce | Da fare |
 | 4. Dati personali e strumenti | Da fare |
@@ -45,4 +45,6 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 
 ## Decisioni prese
 
-- 23/11/2026: Mark 2 vive in `mark2/` per non rompere Mark 1, che resta online. Nome e colori provvisori («Mark 2», oro `#f0c04a`) in attesa delle scelte di Jack.
+- 23/11/2026: Mark 2 vive in `mark2/` per non rompere Mark 1, che resta online.
+- 23/11/2026, scelte di Jack: nome **Mark** (parola d'attivazione «Ehi Mark»); carattere cordiale, deciso, sicuro, dà del tu; voce maschile calma (`VOICE` in `wrangler.toml`, da provare nella Tappa 3); oro su nero e **pianeta di neuroni di Mark 1** (`mark2/app/brain.js`, `stars.js`, copie indipendenti da quelle di Mark 1); meteo per Vimodrone e Cernusco sul Naviglio (`WEATHER_CITIES`); funzioni: tutte quelle di Geoff (finanze, agenda, promemoria, avvisi, briefing del mattino).
+- Piattaforma: Cloudflare o Google Cloud da confermare con Jack (aveva ricevuto un avviso sui prezzi di Cloudflare).

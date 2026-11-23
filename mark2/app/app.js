@@ -1,4 +1,6 @@
 import { CONFIG } from "./config.js";
+import { startBrain } from "./brain.js";
+import { startStars } from "./stars.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -15,9 +17,14 @@ $("version").textContent = `Versione ${CONFIG.VERSION}`;
 
 const STATUS = { idle: "In attesa", listening: "Ti ascolto", thinking: "Ci penso…", speaking: "Rispondo" };
 let busy = false;
+// Il pianeta di neuroni di Mark 1: si accende quando pensa e mentre risponde.
+let brain = null;
+try { startStars($("stars")); } catch (e) { console.warn("stelle", e); }
+try { brain = startBrain($("brain")); } catch (e) { console.warn("cervello", e); }
 function setState(state) {
-  $("brain").dataset.state = state;
+  $("brain-wrap").dataset.state = state;
   $("status").textContent = STATUS[state];
+  brain?.thinking(state === "thinking" || state === "speaking");
 }
 
 const workerUrl = () => (store.get("m2.url") || CONFIG.WORKER_URL).replace(/\/+$/, "");
@@ -81,8 +88,13 @@ $("form").addEventListener("submit", (e) => {
   $("prompt").value = "";
   send(v);
 });
-// La voce arriva nella Tappa 3: per ora il cervello porta il cursore sul campo di testo.
-$("brain").addEventListener("click", () => $("prompt").focus());
+// Un tocco sul cervello (senza trascinarlo): per ora porta al campo di testo, con la Tappa 3 farà partire l'ascolto.
+let downAt = null;
+$("brain").addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; });
+$("brain").addEventListener("pointerup", (e) => {
+  if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 8) $("prompt").focus();
+  downAt = null;
+});
 
 // ── Impostazioni ──
 $("btn-settings").addEventListener("click", () => {

@@ -11,15 +11,14 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; }
+html { background: var(--bg); }
+html, body { margin: 0; color: var(--text); overflow-x: hidden; }
 body {
   font: 400 16px/1.5 "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   min-height: 100dvh;
   display: flex; flex-direction: column;
   padding: env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom));
-  background:
-    radial-gradient(60% 45% at 50% 32%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
-    var(--bg);
+  background: transparent;
 }
 button, input { font: inherit; color: inherit; }
 .mono { font-family: "Geist Mono", ui-monospace, monospace; }
@@ -36,29 +35,11 @@ button, input { font: inherit; color: inherit; }
 
 main { flex: 1; width: 100%; max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
 
-/* ── Il "cervello" ── */
-.brain {
-  --size: min(56vw, 260px);
-  position: relative; width: var(--size); height: var(--size); margin: 4vh 0 12px;
-  border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.core {
-  position: absolute; inset: 30%; border-radius: 50%;
-  background: radial-gradient(circle at 38% 35%, #fffbea, var(--accent) 42%, color-mix(in srgb, var(--accent) 30%, #000) 85%);
-  box-shadow: 0 0 40px color-mix(in srgb, var(--accent) 60%, transparent);
-  transform: scale(var(--level, 1)); transition: transform .08s linear;
-}
-.ring { position: absolute; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
-.r1 { inset: 18%; animation: spin 14s linear infinite; border-style: dashed; }
-.r2 { inset: 8%;  animation: spin 22s linear infinite reverse; opacity: .6; }
-.r3 { inset: 0;   animation: breathe 4s ease-in-out infinite; opacity: .3; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes breathe { 50% { transform: scale(1.04); opacity: .55; } }
-.brain[data-state="thinking"] .core { animation: think 1s ease-in-out infinite; }
-.brain[data-state="thinking"] .r1 { animation-duration: 3s; }
-.brain[data-state="speaking"] .core { box-shadow: 0 0 70px var(--accent); }
-@keyframes think { 50% { transform: scale(1.1); filter: brightness(1.25); } }
-@media (prefers-reduced-motion: reduce) { .ring, .core { animation: none !important; } }
+/* ── Il "cervello": pianeta di neuroni dorati (brain.js) ── */
+.brain-wrap { position: relative; width: 100%; height: min(52vh, 440px); min-height: 280px; margin: 0 0 4px; }
+#brain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+#brain:active { cursor: grabbing; }
+#stars { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
 
 .status { color: var(--muted); font-size: 13px; letter-spacing: .08em; margin: 0 0 16px; }
 

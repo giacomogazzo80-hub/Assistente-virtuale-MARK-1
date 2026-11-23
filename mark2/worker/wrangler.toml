@@ -1,4 +1,4 @@
-# Configurazione del Worker di Mark 2 (Cloudflare, piano gratuito).
+# Configurazione del Worker di Mark (Cloudflare, piano gratuito).
 # I SEGRETI NON VANNO QUI: si inseriscono con
 #   npx wrangler secret put ANTHROPIC_API_KEY
 #   npx wrangler secret put APP_SECRET
@@ -16,9 +16,13 @@ id = "INSERISCI_ID_KV"
 
 [vars]
 # ── Personaggio: cambia liberamente questi valori ──
-ASSISTANT_NAME = "Mark 2"
+ASSISTANT_NAME = "Mark"
 USER_NAME = "Jack"
-PERSONALITY = "un assistente personale educato, sveglio e con un'ironia leggera. Dai del tu, vai dritto al punto."
+PERSONALITY = "cordiale, deciso e sicuro di sé. Dai del tu, vai dritto al punto, quando serve dai un consiglio chiaro senza giri di parole."
+# Voce (Tappa 3, Azure Speech): maschile e calma. Alternativa più grave: it-IT-AlessioMultilingualNeural.
+VOICE = "it-IT-DiegoNeural"
+# Città per il meteo (Tappa 4, Open-Meteo): nome|latitudine|longitudine, separate da ";".
+WEATHER_CITIES = "Vimodrone|45.5150|9.2850;Cernusco sul Naviglio|45.5250|9.3330"
 TIMEZONE = "Europe/Rome"
 # Modello veloce per le risposte a voce.
 MODEL = "claude-haiku-5-5"

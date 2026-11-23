@@ -2,11 +2,11 @@
 // così si cambiano senza toccare il codice. Prompt breve: ogni token in più rallenta la risposta.
 
 export function buildSystemPrompt(env) {
-  const name = env.ASSISTANT_NAME || "Mark 2";
+  const name = env.ASSISTANT_NAME || "Mark";
   const user = env.USER_NAME || "Jack";
   const character =
     env.PERSONALITY ||
-    "un assistente personale educato, sveglio e con un'ironia leggera. Dai del tu, vai dritto al punto.";
+    "cordiale, deciso e sicuro di sé. Dai del tu, vai dritto al punto.";
   const tz = env.TIMEZONE || "Europe/Rome";
   const now = new Date().toLocaleString("it-IT", {
     timeZone: tz, weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",

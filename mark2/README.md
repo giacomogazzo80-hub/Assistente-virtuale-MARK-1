@@ -1,6 +1,6 @@
-# Mark 2
+# Mark (nuovo assistente)
 
-Il nuovo assistente vocale, costruito seguendo la guida in [`docs/guida.md`](../docs/guida.md).
+Mark, il nuovo assistente vocale, costruito seguendo la guida in [`docs/guida.md`](../docs/guida.md).
 Per ora c'è la base: l'app con il «cervello» animato e la chat che risponde mentre scrive. La voce arriva nella prossima tappa.
 
 ## Come metterlo online (una volta sola, circa 10 minuti)

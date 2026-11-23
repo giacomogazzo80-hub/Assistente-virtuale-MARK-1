@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#050507">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Mark 2">
-  <title>Mark 2</title>
+  <meta name="apple-mobile-web-app-title" content="Mark">
+  <title>Mark</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
@@ -17,23 +17,23 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <canvas id="stars" aria-hidden="true"></canvas>
   <header class="top">
-    <span class="name" id="name">Mark 2</span>
+    <span class="name" id="name">Mark</span>
     <button class="icon-btn" id="btn-settings" aria-label="Impostazioni">⚙︎</button>
   </header>
 
   <main>
-    <button class="brain" id="brain" data-state="idle" aria-label="Parla con l'assistente">
-      <span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span>
-      <span class="core"></span>
-    </button>
+    <div class="brain-wrap" id="brain-wrap" data-state="idle">
+      <canvas id="brain" aria-label="Il cervello di Mark: giralo con il dito"></canvas>
+    </div>
     <p class="status" id="status">In attesa</p>
     <section class="reply glass" id="reply" hidden></section>
     <section class="log" id="log"></section>
   </main>
 
   <form class="bar glass" id="form" autocomplete="off">
-    <input id="prompt" placeholder="Scrivi a Mark 2…" enterkeyhint="send">
+    <input id="prompt" placeholder="Scrivi a Mark…" enterkeyhint="send">
     <button type="submit" class="send" aria-label="Invia">➤</button>
   </form>
 
