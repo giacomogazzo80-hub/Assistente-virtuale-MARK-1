@@ -15,6 +15,7 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 - Il Worker usa `@anthropic-ai/sdk` con `claude-haiku-5-5` ed effort `low` (latenza bassa per la voce).
 - Memoria conversazione: KV `MEMORY`, chiave `conv:<sessionId>`, ultimi 10 messaggi, scadenza 30 giorni.
   Sessione comune a PC e telefono: chiave `session:current`; «Conversazione nuova» la cambia.
+- Voce: `/api/voice-token` (token Azure 10 min) e `/api/tts` (riserva). Senza `AZURE_SPEECH_KEY` rispondono 501 e l'app usa la voce del browser. Le regole di pronuncia e l'SSML stanno solo in `mark2/app/voice.js` (`speakable`, `ssml`).
 - Route protette da `Authorization: Bearer <APP_SECRET>`. CORS solo per gli indirizzi in `ALLOWED_ORIGINS`.
 
 ## Dove si cambiano nome e aspetto
@@ -37,7 +38,7 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 |---|---|
 | 1. PWA minima | Fatta (23/11/2026): pianeta di neuroni di Mark 1, chat testuale in streaming, impostazioni, service worker network-first |
 | 2. Cervello `/api/chat` | Fatta (23/11/2026): streaming, memoria KV, sessione comune. Da pubblicare su Cloudflare |
-| 3. Voce | Da fare |
+| 3. Voce | Fatta (23/11/2026): `listen.js` (tocco sul pianeta, «Ehi Mark», conversazione continua), `voice.js` (Azure diretto con token → Azure via Worker → voce del browser; pezzi brevi; testo e voce insieme). Azure da attivare con `AZURE_SPEECH_KEY` |
 | 4. Dati personali e strumenti | Da fare |
 | 5. Memoria e promemoria | Da fare |
 | 6. Notifiche push | Da fare |
@@ -47,4 +48,4 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 
 - 23/11/2026: Mark 2 vive in `mark2/` per non rompere Mark 1, che resta online.
 - 23/11/2026, scelte di Jack: nome **Mark** (parola d'attivazione «Ehi Mark»); carattere cordiale, deciso, sicuro, dà del tu; voce maschile calma (`VOICE` in `wrangler.toml`, da provare nella Tappa 3); oro su nero e **pianeta di neuroni di Mark 1** (`mark2/app/brain.js`, `stars.js`, copie indipendenti da quelle di Mark 1); meteo per Vimodrone e Cernusco sul Naviglio (`WEATHER_CITIES`); funzioni: tutte quelle di Geoff (finanze, agenda, promemoria, avvisi, briefing del mattino).
-- Piattaforma: Cloudflare o Google Cloud da confermare con Jack (aveva ricevuto un avviso sui prezzi di Cloudflare).
+- 23/11/2026: piattaforma confermata Cloudflare, piano gratuito (limiti verificati: 100k richieste/giorno, 10 ms CPU per richiesta, 5 Cron per account, KV 1.000 scritture/giorno, D1 5 GB).

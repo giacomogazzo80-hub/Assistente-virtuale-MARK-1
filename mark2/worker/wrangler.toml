@@ -2,6 +2,7 @@
 # I SEGRETI NON VANNO QUI: si inseriscono con
 #   npx wrangler secret put ANTHROPIC_API_KEY
 #   npx wrangler secret put APP_SECRET
+#   npx wrangler secret put AZURE_SPEECH_KEY   (facoltativo: senza, Mark usa la voce del browser)
 name = "mark2-cervello"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
@@ -21,6 +22,8 @@ USER_NAME = "Jack"
 PERSONALITY = "cordiale, deciso e sicuro di sé. Dai del tu, vai dritto al punto, quando serve dai un consiglio chiaro senza giri di parole."
 # Voce (Tappa 3, Azure Speech): maschile e calma. Alternativa più grave: it-IT-AlessioMultilingualNeural.
 VOICE = "it-IT-DiegoNeural"
+# Regione della risorsa Azure Speech (non è un segreto).
+AZURE_SPEECH_REGION = "westeurope"
 # Città per il meteo (Tappa 4, Open-Meteo): nome|latitudine|longitudine, separate da ";".
 WEATHER_CITIES = "Vimodrone|45.5150|9.2850;Cernusco sul Naviglio|45.5250|9.3330"
 TIMEZONE = "Europe/Rome"

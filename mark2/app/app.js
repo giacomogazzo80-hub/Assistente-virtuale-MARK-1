@@ -1,6 +1,8 @@
 import { CONFIG } from "./config.js";
 import { startBrain } from "./brain.js";
 import { startStars } from "./stars.js";
+import { createVoice, createChunker } from "./voice.js";
+import { createListener, canListen } from "./listen.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -15,17 +17,28 @@ $("name").textContent = CONFIG.NAME;
 $("prompt").placeholder = `Scrivi a ${CONFIG.NAME}…`;
 $("version").textContent = `Versione ${CONFIG.VERSION}`;
 
-const STATUS = { idle: "In attesa", listening: "Ti ascolto", thinking: "Ci penso…", speaking: "Rispondo" };
+const STATUS = { idle: "In attesa", wake: `Di' «Ehi ${CONFIG.NAME}»`, listening: "Ti ascolto", thinking: "Ci penso…", speaking: "Rispondo" };
 let busy = false;
 // Il pianeta di neuroni di Mark 1: si accende quando pensa e mentre risponde.
 let brain = null;
 try { startStars($("stars")); } catch (e) { console.warn("stelle", e); }
 try { brain = startBrain($("brain")); } catch (e) { console.warn("cervello", e); }
+let uiState = "idle";
 function setState(state) {
+  uiState = state;
+  if (state === "idle" && listener?.mode === "wake") state = "wake";
   $("brain-wrap").dataset.state = state;
   $("status").textContent = STATUS[state];
-  brain?.thinking(state === "thinking" || state === "speaking");
+  brain?.thinking(state === "thinking" || state === "speaking" || state === "listening");
 }
+
+// ── Preferenze di voce (salvate sul dispositivo) ──
+const pref = (k, d) => store.get(k, d ? "1" : "0") === "1";
+const prefs = {
+  get voice() { return pref("m2.voice", true); },          // Mark risponde a voce
+  get wake() { return pref("m2.wake", false); },           // "Ehi Mark" sempre in ascolto
+  get continuous() { return pref("m2.continuous", true); }, // dopo una risposta a voce riascolta da solo
+};
 
 const workerUrl = () => (store.get("m2.url") || CONFIG.WORKER_URL).replace(/\/+$/, "");
 const secret = () => store.get("m2.secret");
@@ -45,11 +58,54 @@ function addMsg(role, text) {
   return el;
 }
 
-async function send(text) {
+// ── Voce e ascolto ──
+let lastHandsFree = false;
+const voice = createVoice({
+  api,
+  getVoiceInfo: () => ({ voice: "it-IT-DiegoNeural" }),
+  onStart: () => { revealText(); setState("speaking"); },
+  onEnd: () => afterReply(),
+});
+const listener = canListen ? createListener({
+  wakeWord: CONFIG.NAME,
+  onState: (m) => {
+    if (m === "denied") { $("status").textContent = "Il microfono è bloccato: permettilo nelle impostazioni del browser."; return; }
+    if (busy) return;
+    setState(m === "tap" || m === "hands" ? "listening" : "idle");
+  },
+  onPartial: (t) => { if (!busy && t) $("status").textContent = t; },
+  onSend: (t, { handsFree }) => { lastHandsFree = handsFree; send(t, { spoken: true }); },
+}) : null;
+
+// Testo e voce partono insieme: il testo aspetta il primo audio, al massimo 3 secondi.
+let hiddenText = "", textHeld = false, holdTimer = null;
+function revealText() {
+  clearTimeout(holdTimer);
+  if (!textHeld) return;
+  textHeld = false;
+  $("reply").textContent += hiddenText; hiddenText = "";
+}
+function showText(t) { if (textHeld) hiddenText += t; else $("reply").textContent += t; }
+
+function afterReply() {
+  busy = false;
+  setState("idle");
+  maybeReload();
+  if (listener) listener.resume({ continueConversation: lastHandsFree && prefs.continuous });
+  lastHandsFree = false;
+}
+
+async function send(text, { spoken = false } = {}) {
   text = text.trim();
   if (!text || busy) return;
   if (!workerUrl() || !secret()) { $("settings").showModal(); return; }
   busy = true;
+  listener?.pause();
+  const speak = prefs.voice;
+  voice.begin();
+  const chunker = speak ? createChunker((piece) => voice.say(piece)) : null;
+  textHeld = speak; hiddenText = "";
+  if (speak) holdTimer = setTimeout(revealText, 3000);
   const reply = $("reply");
   // La risposta precedente scende nella cronologia, quella nuova sta nel riquadro grande.
   if (!reply.hidden && reply.textContent) addMsg("bot", reply.textContent);
@@ -70,15 +126,21 @@ async function send(text) {
     for (;;) {
       const { value, done } = await reader.read();
       if (done) break;
-      if (first) { setState("speaking"); first = false; }
-      reply.textContent += dec.decode(value, { stream: true });
+      if (first && !speak) { setState("speaking"); first = false; }
+      const piece = dec.decode(value, { stream: true });
+      showText(piece);
+      chunker?.push(piece);
     }
+    // I tag per l'app (da "[[" in poi) non si mostrano.
+    revealText();
+    reply.textContent = reply.textContent.split("[[")[0].trim();
+    chunker?.end();
   } catch (err) {
+    revealText();
     reply.textContent = err.message || "Qualcosa è andato storto.";
+    if (speak) voice.say(reply.textContent);
   } finally {
-    busy = false;
-    setState("idle");
-    maybeReload();
+    if (speak) voice.finish(); else afterReply();
   }
 }
 
@@ -88,23 +150,38 @@ $("form").addEventListener("submit", (e) => {
   $("prompt").value = "";
   send(v);
 });
-// Un tocco sul cervello (senza trascinarlo): per ora porta al campo di testo, con la Tappa 3 farà partire l'ascolto.
+// Un tocco sul pianeta (senza trascinarlo): ascolta / invia; se Mark sta parlando, lo interrompe.
 let downAt = null;
-$("brain").addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; });
+$("brain").addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; voice.unlock(); });
 $("brain").addEventListener("pointerup", (e) => {
-  if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 8) $("prompt").focus();
+  const isTap = downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 8;
   downAt = null;
+  if (!isTap) return;
+  if (busy && voice.speaking) { voice.stop(); afterReply(); return; }
+  if (busy) return;
+  if (!listener || !listener.tap()) $("prompt").focus();
 });
+$("form").addEventListener("pointerdown", () => voice.unlock(), { once: true });
 
 // ── Impostazioni ──
 $("btn-settings").addEventListener("click", () => {
   $("s-url").value = workerUrl();
   $("s-secret").value = secret();
+  $("s-voice").checked = prefs.voice;
+  $("s-wake").checked = prefs.wake;
+  $("s-continuous").checked = prefs.continuous;
+  $("s-wake").disabled = !canListen;
   $("settings").showModal();
 });
 $("btn-save").addEventListener("click", () => {
   store.set("m2.url", $("s-url").value.trim());
   store.set("m2.secret", $("s-secret").value.trim());
+  store.set("m2.voice", $("s-voice").checked ? "1" : "0");
+  store.set("m2.wake", $("s-wake").checked ? "1" : "0");
+  store.set("m2.continuous", $("s-continuous").checked ? "1" : "0");
+  voice.unlock();
+  listener?.setWake(prefs.wake);
+  setState(uiState);
 });
 $("btn-new").addEventListener("click", async () => {
   try {
@@ -116,6 +193,9 @@ $("btn-new").addEventListener("click", async () => {
     $("settings").close();
   } catch { alert("Non riesco a parlare col cervello."); }
 });
+
+// "Ehi Mark" sempre in ascolto, se attivato (il browser chiede il permesso del microfono).
+if (listener && prefs.wake) listener.setWake(true);
 
 // Sessione comune a PC e telefono: all'avvio chiede al Worker quella attuale.
 (async () => {

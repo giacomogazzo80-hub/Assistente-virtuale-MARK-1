@@ -3,9 +3,11 @@
 //   POST /api/chat          { message, sessionId? }  → testo in streaming (text/plain, a pezzi)
 //   GET  /api/session       → { sessionId }          id di sessione comune a PC e telefono
 //   POST /api/session/new   → { sessionId }          "Conversazione nuova"
+//   GET  /api/voice-token   → { token, region, voice }  token Azure di 10 minuti (501 se Azure non è configurato)
+//   POST /api/tts           { ssml } → audio mp3     via di riserva: è il Worker a chiedere l'audio ad Azure
 //   GET  /api/health        → { ok, name }
 // Tutte le route /api/* (tranne health) chiedono "Authorization: Bearer <APP_SECRET>".
-// Segreti (wrangler secret put): ANTHROPIC_API_KEY, APP_SECRET. Mai nel codice.
+// Segreti (wrangler secret put): ANTHROPIC_API_KEY, APP_SECRET, AZURE_SPEECH_KEY. Mai nel codice.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "./persona.js";
@@ -32,6 +34,12 @@ export default {
         const id = crypto.randomUUID();
         await env.MEMORY.put(SESSION_KEY, id);
         return json({ sessionId: id }, 200, cors);
+      }
+      if (url.pathname === "/api/voice-token" && request.method === "GET") {
+        return await voiceToken(env, cors);
+      }
+      if (url.pathname === "/api/tts" && request.method === "POST") {
+        return await tts(request, env, cors);
       }
       if (url.pathname === "/api/chat" && request.method === "POST") {
         return await chat(request, env, ctx, cors);
@@ -106,6 +114,38 @@ async function chat(request, env, ctx, cors) {
       "Access-Control-Expose-Headers": "X-Session-Id",
     },
   });
+}
+
+// ── Voce (Azure Speech, piano gratuito 500.000 caratteri al mese) ──
+const azureReady = (env) => !!(env.AZURE_SPEECH_KEY && env.AZURE_SPEECH_REGION);
+
+async function voiceToken(env, cors) {
+  const voice = env.VOICE || "it-IT-DiegoNeural";
+  if (!azureReady(env)) return json({ error: "Voce Azure non configurata", voice }, 501, cors);
+  const res = await fetch(`https://${env.AZURE_SPEECH_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken`, {
+    method: "POST",
+    headers: { "Ocp-Apim-Subscription-Key": env.AZURE_SPEECH_KEY, "Content-Length": "0" },
+  });
+  if (!res.ok) return json({ error: "Token voce non disponibile" }, 502, cors);
+  return json({ token: await res.text(), region: env.AZURE_SPEECH_REGION, voice }, 200, { ...cors, "Cache-Control": "no-store" });
+}
+
+async function tts(request, env, cors) {
+  if (!azureReady(env)) return json({ error: "Voce Azure non configurata" }, 501, cors);
+  const { ssml } = await request.json().catch(() => ({}));
+  if (typeof ssml !== "string" || !ssml.startsWith("<speak") || ssml.length > 6000) return json({ error: "SSML non valido" }, 400, cors);
+  const res = await fetch(`https://${env.AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+    method: "POST",
+    headers: {
+      "Ocp-Apim-Subscription-Key": env.AZURE_SPEECH_KEY,
+      "Content-Type": "application/ssml+xml",
+      "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+      "User-Agent": "mark-assistente",
+    },
+    body: ssml,
+  });
+  if (!res.ok) return json({ error: "Voce non disponibile" }, 502, cors);
+  return new Response(res.body, { headers: { ...cors, "Content-Type": "audio/mpeg", "Cache-Control": "no-store" } });
 }
 
 async function currentSession(env) {
