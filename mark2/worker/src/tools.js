@@ -4,17 +4,17 @@ import { finance, addMovement, setBudget, portfolio, weather, agenda, addEvent, 
 export const TOOLS = [
   {
     name: "finanze",
-    description: "Budget di settimana e mese (speso, limite, rimasto, al giorno), entrate, spese per categoria e netto del mese, ultimi movimenti, categorie valide.",
+    description: "Budget di settimana e mese (speso, limite, rimasto, al giorno), entrate, spese per categoria e netto del mese, ultimi movimenti.",
     input_schema: { type: "object", properties: {} },
   },
   {
     name: "registra_movimento",
-    description: "Registra un movimento nel foglio delle finanze. Usalo subito quando Jack dice di aver speso o ricevuto soldi, senza chiedere conferma (chiedi solo se manca l'importo). Restituisce il budget aggiornato.",
+    description: "Registra un movimento nel foglio delle finanze. Usalo subito quando Jack dice di aver speso o ricevuto soldi, senza chiedere conferma (chiedi solo se manca l'importo). Solo Spesa conta nel budget; uscite grandi o eccezionali sono Fuori budget. Restituisce il budget aggiornato.",
     input_schema: {
       type: "object",
       properties: {
         tipo: { type: "string", enum: ["Spesa", "Entrata", "Accumulo", "Investimento", "Correzione", "Fuori budget"] },
-        categoria: { type: "string", description: "Una di: Spesa alimentare, Ristoranti e bar, Casa e bollette, Trasporti, Auto, Salute, Svago, Abbigliamento, Abbonamenti, Regali, Viaggi, Stipendio, Investimenti, Risparmio, Altro" },
+        categoria: { type: "string", description: "Spesa: Fumo, Uscite (serate, mangiare fuori), Macchina, Acquisti, Vacanza, Altro. Entrata: Stipendio, Famiglia, Entrate secondarie, Correzione. Accumulo: Piano Accumulo. Investimento: Investimenti. Fuori budget: Sport. Correzione: Correzione" },
         descrizione: { type: "string" },
         importo: { type: "number", description: "In euro, positivo" },
         data: { type: "string", description: "AAAA-MM-GG, solo se non è oggi" },

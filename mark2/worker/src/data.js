@@ -1,11 +1,10 @@
 // UN SOLO POSTO per i dati e le regole (budget, spese per categoria, portafoglio, meteo, agenda, notizie).
 // Li usano l'app (/api/data), il cervello (strumenti) e, più avanti, gli avvisi: così i numeri tornano sempre.
 
-import { readRange, appendRow, listEvents, insertEvent, googleReady } from "./google.js";
+import { readRange, appendRow, writeRange, listEvents, insertEvent, googleReady } from "./google.js";
 
 const TZ = (env) => env.TIMEZONE || "Europe/Rome";
 const FIN_KEY = "cache:finanze";    // copia dei dati già calcolati (60 s): Google permette 60 letture al minuto
-const BUDGET_KEY = "settings:budget";
 const mem = new Map();              // copia in memoria dell'istanza: { value, exp }
 
 async function cached(key, ttlSec, load) {
@@ -44,19 +43,33 @@ export function parseAmount(v) {
 }
 const round2 = (n) => Math.round(n * 100) / 100;
 
-// ── Budget: salvato in un posto solo (KV), cambiabile dall'app o a voce ──
+// ── Budget: sta SOLO nel foglio, scheda Riepilogo (C4 = mese, C5 = settimana) ──
+const num = (v) => { const n = parseAmount(v); return n > 0 ? n : null; };
 export async function getBudget(env) {
-  return (await env.MEMORY.get(BUDGET_KEY, "json")) || { settimana: null, mese: null };
+  if (!googleReady(env)) return { settimana: null, mese: null };
+  const rows = await readRange(env, "Riepilogo!C4:C5");
+  return { mese: num(rows[0]?.[0]), settimana: num(rows[1]?.[0]) };
 }
 export async function setBudget(env, { settimana, mese }) {
-  const b = await getBudget(env);
-  if (settimana !== undefined) b.settimana = settimana === null ? null : Math.max(0, +settimana);
-  if (mese !== undefined) b.mese = mese === null ? null : Math.max(0, +mese);
-  await env.MEMORY.put(BUDGET_KEY, JSON.stringify(b));
+  if (!googleReady(env)) throw new Error("Google non è ancora collegato");
+  const cell = (v) => (v === null ? "" : String(Math.max(0, +v)).replace(".", ","));
+  if (mese !== undefined) await writeRange(env, "Riepilogo!C4", [[cell(mese)]]);
+  if (settimana !== undefined) await writeRange(env, "Riepilogo!C5", [[cell(settimana)]]);
   mem.delete(FIN_KEY);
   await env.MEMORY.delete(FIN_KEY);
-  return b;
+  return getBudget(env);
 }
+
+// Categorie ammesse per tipo (come i menu a tendina del foglio). Nel dubbio la prima… tranne Spesa → «Altro».
+export const CATEGORIE = {
+  Spesa: ["Fumo", "Uscite", "Macchina", "Acquisti", "Vacanza", "Altro"],
+  Entrata: ["Stipendio", "Famiglia", "Entrate secondarie", "Correzione"],
+  Accumulo: ["Piano Accumulo"],
+  Investimento: ["Investimenti"],
+  "Fuori budget": ["Sport"],
+  Correzione: ["Correzione"],
+};
+const DEFAULT_CAT = { Spesa: "Altro", Entrata: "Entrate secondarie" };
 
 // ── Finanze: lettura del foglio e TUTTI i calcoli ──
 export async function finance(env, { fresh = false } = {}) {
@@ -67,7 +80,7 @@ export async function finance(env, { fresh = false } = {}) {
     const kv = await env.MEMORY.get(FIN_KEY, "json");
     if (kv) { mem.set(FIN_KEY, { value: kv, exp: Date.now() + 30000 }); return kv; }
   }
-  const [rows, cats, budget] = await Promise.all([readRange(env, "Movimenti!A2:E"), readRange(env, "Elenchi!D2:D"), getBudget(env)]);
+  const [rows, budget] = await Promise.all([readRange(env, "Movimenti!A2:E"), getBudget(env)]);
   const movs = rows
     .map((r) => ({ data: parseDate(r[0]), tipo: String(r[1] || "").trim(), categoria: String(r[2] || "").trim() || "Altro", descrizione: String(r[3] || "").trim(), importo: Math.abs(parseAmount(r[4])) }))
     .filter((m) => m.data && m.tipo && m.importo);
@@ -83,7 +96,9 @@ export async function finance(env, { fresh = false } = {}) {
   const speseMese = sum(inMonth, "Spesa");
   const perCategoria = {};
   for (const m of inMonth) if (m.tipo === "Spesa") perCategoria[m.categoria] = round2((perCategoria[m.categoria] || 0) + m.importo);
-  const entrateMese = sum(inMonth, "Entrata");
+  // Un'Entrata con categoria Correzione è solo un aggiustamento, non una vera entrata.
+  const entrateMese = round2(inMonth.filter((m) => m.tipo === "Entrata" && m.categoria !== "Correzione").reduce((a, m) => a + m.importo, 0));
+  const correzioniMese = sum(inMonth, "Correzione");
   const fuoriBudgetMese = sum(inMonth, "Fuori budget");
   const daysInMonth = new Date(Date.UTC(t.y, t.m, 0)).getUTCDate();
 
@@ -102,12 +117,12 @@ export async function finance(env, { fresh = false } = {}) {
     },
     mese: {
       entrate: entrateMese, spese: speseMese, fuoriBudget: fuoriBudgetMese,
-      accumulo: sum(inMonth, "Accumulo"), investimenti: sum(inMonth, "Investimento"),
-      netto: round2(entrateMese - speseMese - fuoriBudgetMese),
+      accumulo: sum(inMonth, "Accumulo"), investimenti: sum(inMonth, "Investimento"), correzioni: correzioniMese,
+      // Netto = Entrate − Spese − Fuori budget − Correzioni − Accumulo − Investimenti
+      netto: round2(entrateMese - speseMese - fuoriBudgetMese - correzioniMese - sum(inMonth, "Accumulo") - sum(inMonth, "Investimento")),
       perCategoria: Object.entries(perCategoria).sort((a, b) => b[1] - a[1]).map(([categoria, importo]) => ({ categoria, importo })),
     },
     ultimi: movs.map((m, i) => ({ ...m, i })).sort((a, b) => b.data.localeCompare(a.data) || b.i - a.i).slice(0, 8).map(({ i, ...m }) => m).map((m) => ({ ...m, data: itDate(m.data) })),
-    categorie: cats.map((r) => String(r[0] || "").trim()).filter(Boolean),
   };
   mem.set(FIN_KEY, { value, exp: Date.now() + 60000 });
   await env.MEMORY.put(FIN_KEY, JSON.stringify(value), { expirationTtl: 60 });
@@ -121,8 +136,8 @@ export async function addMovement(env, { tipo = "Spesa", categoria, descrizione 
   const tipoOk = TIPI.find((x) => x.toLowerCase() === String(tipo).toLowerCase()) || "Spesa";
   const t = todayParts(env);
   const iso = (data && parseDate(data)) || (data && /^\d{4}-\d{2}-\d{2}$/.test(data) ? data : null) || ymd(t.y, t.m, t.d);
-  const before = await finance(env);
-  const catOk = before.categorie?.find((c) => c.toLowerCase() === String(categoria || "").toLowerCase()) || "Altro";
+  const allowed = CATEGORIE[tipoOk];
+  const catOk = allowed.find((c) => c.toLowerCase() === String(categoria || "").toLowerCase()) || DEFAULT_CAT[tipoOk] || allowed[0];
   // USER_ENTERED: il foglio (in italiano) legge la data e la virgola decimale come se le scrivesse Jack.
   await appendRow(env, "Movimenti!A:E", [itDate(iso), tipoOk, catOk, descrizione, String(amount).replace(".", ",")]);
   const after = await finance(env, { fresh: true });
@@ -158,18 +173,19 @@ async function quote(symbol) {
 export async function portfolio(env) {
   if (!googleReady(env)) return { collegato: false };
   return cached("portafoglio", 300, async () => {
-    const rows = (await readRange(env, "Portafoglio!A2:E")).filter((r) => r[0] || r[2]);
+    // Strumento | ISIN | Simbolo | PAC mensile | Quote | Prezzo medio | Aggiornato
+    const rows = (await readRange(env, "Portafoglio!A2:G")).filter((r) => r[1] || r[2]);
     const titoli = await Promise.all(rows.map(async (r) => {
-      const isin = String(r[0] || "").trim();
-      const quote_ = parseAmount(r[3]);
-      const pmc = parseAmount(r[4]);
+      const isin = String(r[1] || "").trim();
+      const quote_ = parseAmount(r[4]);
+      const pmc = parseAmount(r[5]);
       let simbolo = String(r[2] || "").trim();
       try { if (!simbolo && isin) simbolo = await resolveSymbol(env, isin); } catch {}
       let q = null;
       try { if (simbolo) q = await quote(simbolo); } catch {}
       const investito = round2(quote_ * pmc);
       const valore = q ? round2(quote_ * q.prezzo) : null;
-      return { nome: String(r[1] || isin), isin, simbolo, quote: quote_, investito, prezzo: q?.prezzo ?? null, valore, variazioneOggi: q?.variazioneOggi ?? null, guadagno: valore != null ? round2(valore - investito) : null };
+      return { nome: String(r[0] || isin), isin, simbolo, pac: parseAmount(r[3]), quote: quote_, investito, prezzo: q?.prezzo ?? null, valore, variazioneOggi: q?.variazioneOggi ?? null, guadagno: valore != null ? round2(valore - investito) : null };
     }));
     const investito = round2(titoli.reduce((a, x) => a + x.investito, 0));
     const valore = round2(titoli.reduce((a, x) => a + (x.valore ?? x.investito), 0));

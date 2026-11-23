@@ -21,13 +21,14 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 - Pubblicazione: Cloudflare **Workers Builds** collegato al repository (ramo `main`, cartella `mark2/worker`), Worker `mark2-cervello` sull'account di Jack. KV `mark2-memoria` (id in `wrangler.toml`). Segreti messi da Jack nel dashboard: `ANTHROPIC_API_KEY`, `APP_SECRET` (+ facoltativo `AZURE_SPEECH_KEY`). Sull'account c'è anche un Worker `mark-api` di Jack: non toccarlo.
 - Indirizzo: https://mark2-cervello.mark-backend.workers.dev. Dal cloud di Claude *.workers.dev è bloccato dal proxy: le prove dal vivo si fanno dal browser di Jack.
 - Google: service account (segreto `GOOGLE_SERVICE_ACCOUNT` = JSON della chiave, `GOOGLE_CALENDAR_ID` = email del calendario), foglio e calendario condivisi con l'email del service account. `SHEET_ID` in `wrangler.toml`.
-- Budget: KV `settings:budget` ({settimana, mese}), cambiabile dalla scheda Budget o a voce. Copia dei dati del foglio: memoria + KV `cache:finanze` per 60 s (niente Cache API: su workers.dev non salva).
+- Budget: sta SOLO nel foglio, `Riepilogo!C4` (mese) e `C5` (settimana); l'app e la voce lo cambiano scrivendo lì. Copia dei dati del foglio: memoria + KV `cache:finanze` per 60 s (niente Cache API: su workers.dev non salva).
 - Protezione: `APP_SECRET`. **Niente Cloudflare Access**: il piano gratuito di Zero Trust chiede la carta, e Jack non vuole inserirla.
 - Voce senza carta: voce del dispositivo, scelta in `bestBrowserVoice()` (Edge «Online (Natural)», iPhone «Luca Premium»). Workers AI non ha voci italiane (nov 2026).
 
-- Finanze: foglio Google «Mark – Finanze» (id `1tfD505MGyhHaXQ-Am1ilEeV4rakhA663cawadicAe8Q`, nel Drive di Jack), schema di Geoff:
-  `Movimenti` (Data gg/mm/aaaa, Tipo, Categoria, Descrizione, Importo €), `Portafoglio` (ISIN, Nome, Simbolo Yahoo, Quote, Prezzo medio di carico, Investito = formula), `Elenchi` (tipi e categorie per i menu a tendina).
-  Il foglio è in locale it_IT: nelle formule scritte via API il separatore è `;`, non `,`. Budget e obiettivi NON stanno nel foglio (un posto solo, nel Worker).
+- Finanze: foglio Google «Mark – Finanze» (id `1tfD505MGyhHaXQ-Am1ilEeV4rakhA663cawadicAe8Q`, nel Drive di Jack), struttura in `docs/struttura-foglio.md` (data da Jack il 23/11/2026):
+  `Movimenti` (Data, Tipo, Categoria, Descrizione, Importo; menu a tendina; niente formule), `Riepilogo` (C2 totale mese, C3 totale settimana, C4 budget mese, C5 budget settimana), `Portafoglio` (Strumento, ISIN, Simbolo, PAC mensile, Quote, Prezzo medio, Aggiornato).
+  Locale it_IT: nelle formule il separatore è `;`. Scrittura in Movimenti con append `USER_ENTERED` + `insertDataOption=OVERWRITE` (le righe vuote hanno già i formati; con INSERT_ROWS Google copia il formato dell'intestazione).
+  Movimenti NON è una «tabella» di Google Fogli: le tabelle forzano le date in formato americano e l'append finisce dopo la riga 1000.
 
 ## Dove si cambiano nome e aspetto
 
