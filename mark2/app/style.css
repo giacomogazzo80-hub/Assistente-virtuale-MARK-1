@@ -33,7 +33,12 @@ button, input { font: inherit; color: inherit; }
 .name { font-weight: 600; letter-spacing: .28em; text-transform: uppercase; font-size: 13px; color: var(--accent); }
 .icon-btn { background: none; border: 0; font-size: 20px; color: var(--muted); cursor: pointer; padding: 6px; }
 
-main { flex: 1; width: 100%; max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+main { flex: 1; width: 100%; max-width: 680px; margin: 0 auto; display: flex; justify-content: center; gap: 24px; }
+.center { flex: 1; min-width: 0; max-width: 680px; display: flex; flex-direction: column; align-items: center; }
+.side { display: none; }
+.top > div { display: flex; gap: 4px; }
+#btn-discreet { font-size: 22px; }
+body.discreet #btn-discreet { color: var(--accent); }
 
 /* ── Il "cervello": pianeta di neuroni dorati (brain.js) ── */
 .brain-wrap { position: relative; width: 100%; height: min(52vh, 440px); min-height: 280px; margin: 0 0 4px; }
@@ -71,3 +76,48 @@ dialog::backdrop { background: #0009; }
 .settings label.check input { width: 18px; height: 18px; accent-color: var(--accent); padding: 0; }
 .row { display: flex; justify-content: space-between; align-items: center; }
 .hint { font-size: 12px; color: var(--muted); margin: 0; }
+
+/* ── Widget ── */
+.card { padding: 14px 16px; cursor: pointer; transition: border-color .2s; }
+.card:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.card h3 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+.w-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 4px 0; font-size: 14px; }
+.w-row small { display: block; color: var(--muted); font-size: 12px; }
+.w-sub { margin: 2px 0 8px; color: var(--muted); font-size: 12px; }
+.w-empty { margin: 0; color: var(--muted); font-size: 13px; }
+.big { font-size: 22px; font-weight: 300; white-space: nowrap; }
+.huge { font-size: 34px; margin: 0; }
+.up { color: var(--up); } .down { color: var(--down); }
+.meter { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; margin: 4px 0; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.meter i.warn { background: #f0a04a; } .meter i.over { background: var(--down); }
+.w-bar { display: grid; grid-template-columns: 1fr auto; font-size: 13px; column-gap: 10px; margin-bottom: 4px; }
+.w-bar .meter { grid-column: 1 / -1; }
+.w-days { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.w-days b { display: block; color: var(--text); font-weight: 400; text-transform: capitalize; }
+.w-days em { font-style: normal; color: #8ab8f0; }
+.w-news { display: block; color: var(--text); text-decoration: none; font-size: 13px; padding: 5px 0; border-top: 1px solid var(--line); }
+.w-news:first-child { border-top: 0; }
+.w-more { display: none; }
+.card.open .w-more { display: flex; }
+.budget-form { gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; }
+.budget-form label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); flex: 1; min-width: 90px; }
+.budget-form input { background: #0006; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; color: var(--text); width: 100%; }
+.budget-form button { border: 0; border-radius: 10px; padding: 9px 12px; background: var(--accent); color: #111; font-weight: 600; cursor: pointer; }
+
+/* Schede citate nella risposta */
+.cards { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; }
+/* Home su telefono: carosello di schede (niente scroll della pagina in orizzontale) */
+.home-cards { width: 100%; display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; margin-top: 12px; scrollbar-width: none; }
+.home-cards::-webkit-scrollbar { display: none; }
+.home-cards .card { flex: 0 0 min(78vw, 300px); scroll-snap-align: start; }
+.home-cards .card.open { flex-basis: min(88vw, 360px); }
+body.replying .home-cards { display: none; }
+
+/* PC: cervello al centro e widget ai lati; mentre risponde i lati spariscono */
+@media (min-width: 1100px) {
+  main { max-width: 1400px; }
+  .side { display: flex; flex-direction: column; gap: 12px; width: 300px; flex: 0 0 300px; padding-top: 24px; transition: opacity .3s; }
+  body.replying .side { opacity: 0; pointer-events: none; }
+  .home-cards { display: none; }
+}

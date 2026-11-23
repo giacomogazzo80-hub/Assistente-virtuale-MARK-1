@@ -1,7 +1,7 @@
 // Service worker "network-first": prende sempre dalla rete, usa la copia solo offline.
 // A OGNI VERSIONE NUOVA cambia VERSION (e anche CONFIG.VERSION in config.js), altrimenti i telefoni tengono la vecchia.
-const VERSION = "mark2-v4";
-const SHELL = ["./", "index.html", "style.css", "app.js", "config.js", "manifest.webmanifest", "icon.svg", "brain.js", "stars.js", "voice.js", "listen.js"];
+const VERSION = "mark2-v5";
+const SHELL = ["./", "index.html", "style.css", "app.js", "config.js", "manifest.webmanifest", "icon.svg", "brain.js", "stars.js", "voice.js", "listen.js", "widgets.js"];
 
 self.addEventListener("install", (e) =>
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())));
@@ -13,7 +13,8 @@ self.addEventListener("activate", (e) =>
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== "GET" || url.origin !== location.origin) return; // le chiamate al Worker non passano di qui
+  // Le chiamate al Worker (/api/…) non passano di qui: dati sempre freschi e mai salvati.
+  if (e.request.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/")) return;
   e.respondWith(
     fetch(e.request, { cache: "no-cache" })
       .then((r) => { const copy = r.clone(); caches.open(VERSION).then((c) => c.put(e.request, copy)); return r; })

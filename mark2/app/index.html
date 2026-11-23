@@ -20,16 +20,25 @@
   <canvas id="stars" aria-hidden="true"></canvas>
   <header class="top">
     <span class="name" id="name">Mark</span>
-    <button class="icon-btn" id="btn-settings" aria-label="Impostazioni">⚙︎</button>
+    <div>
+      <button class="icon-btn" id="btn-discreet" aria-label="Modalità discreta" title="Modalità discreta: niente cifre in euro">◐</button>
+      <button class="icon-btn" id="btn-settings" aria-label="Impostazioni">⚙︎</button>
+    </div>
   </header>
 
   <main>
+    <aside class="side" id="side-left"></aside>
+    <div class="center">
     <div class="brain-wrap" id="brain-wrap" data-state="idle">
       <canvas id="brain" aria-label="Il cervello di Mark: giralo con il dito"></canvas>
     </div>
     <p class="status" id="status">In attesa</p>
     <section class="reply glass" id="reply" hidden></section>
+    <section class="cards" id="cards" hidden></section>
+    <section class="home-cards" id="home-cards"></section>
     <section class="log" id="log"></section>
+    </div>
+    <aside class="side" id="side-right"></aside>
   </main>
 
   <form class="bar glass" id="form" autocomplete="off">
@@ -49,6 +58,7 @@
       <p class="hint">Il codice resta solo su questo dispositivo. Non è la chiave dell'intelligenza artificiale, quella sta al sicuro sul server.</p>
       <label class="check"><input type="checkbox" id="s-voice"> Mark risponde a voce</label>
       <label class="check"><input type="checkbox" id="s-wake"> «Ehi Mark» sempre in ascolto (solo con l'app aperta)</label>
+      <label class="check"><input type="checkbox" id="s-discreet"> Modalità discreta: niente cifre in euro (sono in compagnia)</label>
       <label class="check"><input type="checkbox" id="s-continuous"> Conversazione continua: dopo la risposta riascolta da solo</label>
       <p class="hint">Tocca il pianeta per parlare e toccalo di nuovo per inviare. Per chiudere la conversazione di' «grazie, è tutto».</p>
       <button type="button" id="btn-new" class="ghost">Conversazione nuova</button>

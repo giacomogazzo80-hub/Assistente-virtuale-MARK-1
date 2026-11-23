@@ -38,7 +38,7 @@ export function ssml(text, voice) {
 // ── Divide la risposta in pezzi brevi mentre arriva: la voce parte prima. ──
 // Primo pezzo: la prima frase (max ~110 caratteri, se no fino alla prima virgola); poi una frase; poi blocchi 140–400.
 export function createChunker(onChunk) {
-  let buf = "", count = 0;
+  let buf = "", count = 0, tags = false; // dopo "[[" ci sono solo tag per l'app: non si leggono
   const sentenceEnd = (s, from = 0) => {
     const re = /[.!?…]+["»”)]?\s/g; re.lastIndex = from;
     const m = re.exec(s); return m ? m.index + m[0].length : -1;
@@ -69,7 +69,13 @@ export function createChunker(onChunk) {
     }
   }
   return {
-    push(text) { buf += text; take(); },
+    push(text) {
+      if (tags) return;
+      buf += text;
+      const cut = buf.indexOf("[[");
+      if (cut >= 0) { buf = buf.slice(0, cut); tags = true; }
+      take();
+    },
     end() { const rest = buf.trim(); buf = ""; if (rest) { count++; onChunk(rest); } },
   };
 }
