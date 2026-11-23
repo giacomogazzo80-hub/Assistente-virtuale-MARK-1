@@ -58,10 +58,18 @@ const SHEETS = "https://sheets.googleapis.com/v4/spreadsheets";
 export const readRange = (env, range) =>
   google(env, `${SHEETS}/${env.SHEET_ID}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER`)
     .then((d) => d.values || []);
+// OVERWRITE: la riga va nella prima riga vuota, che ha già i formati giusti (data e €).
+// Con INSERT_ROWS Google copierebbe il formato dell'intestazione.
 export const appendRow = (env, range, row) =>
-  google(env, `${SHEETS}/${env.SHEET_ID}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
+  google(env, `${SHEETS}/${env.SHEET_ID}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`, {
     method: "POST",
     body: JSON.stringify({ values: [row] }),
+  });
+
+export const writeRange = (env, range, values) =>
+  google(env, `${SHEETS}/${env.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`, {
+    method: "PUT",
+    body: JSON.stringify({ values }),
   });
 
 const CAL = "https://www.googleapis.com/calendar/v3/calendars";
