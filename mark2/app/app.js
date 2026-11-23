@@ -40,7 +40,9 @@ const prefs = {
   get continuous() { return pref("m2.continuous", true); }, // dopo una risposta a voce riascolta da solo
 };
 
-const workerUrl = () => (store.get("m2.url") || CONFIG.WORKER_URL).replace(/\/+$/, "");
+// Di solito l'app è servita dal Worker stesso: allora l'indirizzo è quello della pagina.
+const servedByWorker = /\.workers\.dev$/.test(location.hostname) || CONFIG.SERVED_BY_WORKER;
+const workerUrl = () => (store.get("m2.url") || CONFIG.WORKER_URL || (servedByWorker ? location.origin : "")).replace(/\/+$/, "");
 const secret = () => store.get("m2.secret");
 
 async function api(path, options = {}) {

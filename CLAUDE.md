@@ -8,7 +8,7 @@ Jack (italiano, scrive e legge in italiano) sta costruendo un assistente vocale 
 ## Architettura di Mark 2
 
 ```
-mark2/app/     PWA statica (HTML+CSS+JS senza framework), pubblicata con GitHub Pages su /mark2/app/
+mark2/app/     PWA statica (HTML+CSS+JS senza framework), servita dal Worker stesso ([assets] in wrangler.toml)
 mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memoria in KV
 ```
 
@@ -17,6 +17,10 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
   Sessione comune a PC e telefono: chiave `session:current`; «Conversazione nuova» la cambia.
 - Voce: `/api/voice-token` (token Azure 10 min) e `/api/tts` (riserva). Senza `AZURE_SPEECH_KEY` rispondono 501 e l'app usa la voce del browser. Le regole di pronuncia e l'SSML stanno solo in `mark2/app/voice.js` (`speakable`, `ssml`).
 - Route protette da `Authorization: Bearer <APP_SECRET>`. CORS solo per gli indirizzi in `ALLOWED_ORIGINS`.
+
+- Pubblicazione: workflow `.github/workflows/pubblica-mark.yml` (push su main in `mark2/**` o a mano). Segreti in GitHub Actions: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ANTHROPIC_API_KEY`, `APP_SECRET` (+ facoltativo `AZURE_SPEECH_KEY`). Il workflow crea/riusa il KV `mark2-memoria`.
+- Protezione: `APP_SECRET`. **Niente Cloudflare Access**: il piano gratuito di Zero Trust chiede la carta, e Jack non vuole inserirla.
+- Voce senza carta: voce del dispositivo, scelta in `bestBrowserVoice()` (Edge «Online (Natural)», iPhone «Luca Premium»). Workers AI non ha voci italiane (nov 2026).
 
 ## Dove si cambiano nome e aspetto
 

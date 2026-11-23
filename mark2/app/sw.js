@@ -1,6 +1,6 @@
 // Service worker "network-first": prende sempre dalla rete, usa la copia solo offline.
 // A OGNI VERSIONE NUOVA cambia VERSION (e anche CONFIG.VERSION in config.js), altrimenti i telefoni tengono la vecchia.
-const VERSION = "mark2-v3";
+const VERSION = "mark2-v4";
 const SHELL = ["./", "index.html", "style.css", "app.js", "config.js", "manifest.webmanifest", "icon.svg", "brain.js", "stars.js", "voice.js", "listen.js"];
 
 self.addEventListener("install", (e) =>

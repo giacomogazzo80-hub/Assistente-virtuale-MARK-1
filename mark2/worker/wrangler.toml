@@ -8,9 +8,16 @@ main = "src/index.js"
 compatibility_date = "2026-11-01"
 compatibility_flags = ["nodejs_compat"]
 
+# L'app (mark2/app) è servita dal Worker stesso: un solo indirizzo per app e cervello.
+# Le richieste /api/* non sono file, quindi passano al codice del Worker.
+[assets]
+directory = "../app"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
 # Memoria della conversazione (ultimi 10 messaggi, scadenza 30 giorni).
-# Crea il namespace con: npx wrangler kv namespace create MEMORY
-# e incolla qui l'id che ti restituisce.
+# Il deploy da GitHub (workflow "Pubblica Mark") crea il namespace da solo e mette qui l'id.
+# A mano: npx wrangler kv namespace create MEMORY e incolla l'id.
 [[kv_namespaces]]
 binding = "MEMORY"
 id = "INSERISCI_ID_KV"

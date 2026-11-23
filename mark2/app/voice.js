@@ -141,13 +141,31 @@ export function createVoice({ api, getVoiceInfo, onStart = () => {}, onEnd = () 
     return { browser: speakable(text) };
   }
 
+  // La voce maschile italiana più umana tra quelle del dispositivo, gratis e senza account:
+  // - Edge su PC: "Microsoft Diego/Giuseppe Online (Natural)", voci neurali di Microsoft;
+  // - iPhone/Mac: "Luca" in versione Premium o Migliorata, da scaricare in Impostazioni › Accessibilità › Contenuti letti › Voci.
+  function bestBrowserVoice() {
+    const it = speechSynthesis.getVoices().filter((v) => v.lang?.toLowerCase().startsWith("it"));
+    const score = (v) => {
+      const n = v.name;
+      let s = 0;
+      if (/Online \(Natural\)|Natural|Neural/i.test(n)) s += 50;
+      if (/Premium/i.test(n)) s += 45;
+      if (/Enhanced|Migliorat|Avanzat/i.test(n)) s += 35;
+      if (/Diego|Giuseppe|Luca|Cosimo|Giorgio|Benigno|Rocko|Grandpa|male|uomo/i.test(n)) s += 20;
+      if (/Diego|Giuseppe|Luca/i.test(n)) s += 5;
+      if (/Elsa|Isabella|Alice|Federica|Paola|Emma|Google italiano|female|donna/i.test(n)) s -= 30;
+      return s;
+    };
+    return it.sort((a, b) => score(b) - score(a))[0] || null;
+  }
+
   function browserSpeak(text) {
     return new Promise((resolve) => {
       if (!("speechSynthesis" in window) || !text) return resolve();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "it-IT"; u.rate = 0.98; u.pitch = 0.9;
-      const voices = speechSynthesis.getVoices().filter((v) => v.lang?.startsWith("it"));
-      u.voice = voices.find((v) => /luca|diego|giorgio|cosimo|male|uomo/i.test(v.name)) || voices[0] || null;
+      u.voice = bestBrowserVoice();
       // Alcuni browser non chiamano mai onend: una rete di sicurezza in base alla lunghezza del testo.
       const safety = setTimeout(resolve, 2000 + text.length * 90);
       u.onend = u.onerror = () => { clearTimeout(safety); resolve(); };
