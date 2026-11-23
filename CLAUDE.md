@@ -19,6 +19,9 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 - Route protette da `Authorization: Bearer <APP_SECRET>`. CORS solo per gli indirizzi in `ALLOWED_ORIGINS`.
 
 - Pubblicazione: Cloudflare **Workers Builds** collegato al repository (ramo `main`, cartella `mark2/worker`), Worker `mark2-cervello` sull'account di Jack. KV `mark2-memoria` (id in `wrangler.toml`). Segreti messi da Jack nel dashboard: `ANTHROPIC_API_KEY`, `APP_SECRET` (+ facoltativo `AZURE_SPEECH_KEY`). Sull'account c'è anche un Worker `mark-api` di Jack: non toccarlo.
+- Indirizzo: https://mark2-cervello.mark-backend.workers.dev. Dal cloud di Claude *.workers.dev è bloccato dal proxy: le prove dal vivo si fanno dal browser di Jack.
+- Google: service account (segreto `GOOGLE_SERVICE_ACCOUNT` = JSON della chiave, `GOOGLE_CALENDAR_ID` = email del calendario), foglio e calendario condivisi con l'email del service account. `SHEET_ID` in `wrangler.toml`.
+- Budget: KV `settings:budget` ({settimana, mese}), cambiabile dalla scheda Budget o a voce. Copia dei dati del foglio: memoria + KV `cache:finanze` per 60 s (niente Cache API: su workers.dev non salva).
 - Protezione: `APP_SECRET`. **Niente Cloudflare Access**: il piano gratuito di Zero Trust chiede la carta, e Jack non vuole inserirla.
 - Voce senza carta: voce del dispositivo, scelta in `bestBrowserVoice()` (Edge «Online (Natural)», iPhone «Luca Premium»). Workers AI non ha voci italiane (nov 2026).
 
@@ -45,12 +48,12 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 | Tappa | Stato |
 |---|---|
 | 1. PWA minima | Fatta (23/11/2026): pianeta di neuroni di Mark 1, chat testuale in streaming, impostazioni, service worker network-first |
-| 2. Cervello `/api/chat` | Fatta (23/11/2026): streaming, memoria KV, sessione comune. Da pubblicare su Cloudflare |
+| 2. Cervello `/api/chat` | Fatta (23/11/2026): streaming, memoria KV, sessione comune. Online dal 23/11/2026: https://mark2-cervello.mark-backend.workers.dev |
 | 3. Voce | Fatta (23/11/2026): `listen.js` (tocco sul pianeta, «Ehi Mark», conversazione continua), `voice.js` (Azure diretto con token → Azure via Worker → voce del browser; pezzi brevi; testo e voce insieme). Azure da attivare con `AZURE_SPEECH_KEY` |
-| 4. Dati personali e strumenti | Da fare |
+| 4. Dati personali e strumenti | Codice fatto (23/11/2026): strumenti nel cervello (`tools.js`), dati e regole in `data.js`, Google in `google.js`, `/api/data`, `/api/budget`. Meteo e notizie vanno subito; finanze e agenda aspettano i segreti Google |
 | 5. Memoria e promemoria | Da fare |
 | 6. Notifiche push | Da fare |
-| 7. Widget | Da fare |
+| 7. Widget | In parte (23/11/2026): `widgets.js`, schede ai lati su PC e carosello su telefono, tag `[[widget:…]]` e `[[crea:…]]`, modalità discreta. Manca la pagina per scegliere e ordinare i widget |
 
 ## Decisioni prese
 

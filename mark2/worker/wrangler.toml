@@ -34,7 +34,28 @@ AZURE_SPEECH_REGION = "westeurope"
 # Città per il meteo (Tappa 4, Open-Meteo): nome|latitudine|longitudine, separate da ";".
 WEATHER_CITIES = "Vimodrone|45.5150|9.2850;Cernusco sul Naviglio|45.5250|9.3330"
 TIMEZONE = "Europe/Rome"
+# Foglio Google «Mark – Finanze» (Tappa 4). Non è un segreto: senza la chiave del service account non si apre.
+# Segreti da mettere nel dashboard: GOOGLE_SERVICE_ACCOUNT (il JSON della chiave) e GOOGLE_CALENDAR_ID (l'email del calendario).
+SHEET_ID = "1tfD505MGyhHaXQ-Am1ilEeV4rakhA663cawadicAe8Q"
 # Modello veloce per le risposte a voce.
 MODEL = "claude-haiku-5-5"
 # Indirizzi da cui l'app può chiamare il Worker (separati da virgola).
 ALLOWED_ORIGINS = "https://giacomogazzo80-hub.github.io"
+
+# Anteprime dei rami (Workers Builds le crea per ogni PR): stesse impostazioni e stessa memoria di Mark,
+# così una PR si prova com'è davvero. Le anteprime non toccano la versione pubblicata.
+[previews.vars]
+ASSISTANT_NAME = "Mark"
+USER_NAME = "Jack"
+PERSONALITY = "cordiale, deciso e sicuro di sé. Dai del tu, vai dritto al punto, quando serve dai un consiglio chiaro senza giri di parole."
+VOICE = "it-IT-DiegoNeural"
+AZURE_SPEECH_REGION = "westeurope"
+WEATHER_CITIES = "Vimodrone|45.5150|9.2850;Cernusco sul Naviglio|45.5250|9.3330"
+TIMEZONE = "Europe/Rome"
+SHEET_ID = "1tfD505MGyhHaXQ-Am1ilEeV4rakhA663cawadicAe8Q"
+MODEL = "claude-haiku-5-5"
+ALLOWED_ORIGINS = "https://giacomogazzo80-hub.github.io"
+
+[[previews.kv_namespaces]]
+binding = "MEMORY"
+id = "4a244aed3b3745ac8051f642d5f20174"

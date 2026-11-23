@@ -5,12 +5,16 @@
 //   POST /api/session/new   → { sessionId }          "Conversazione nuova"
 //   GET  /api/voice-token   → { token, region, voice }  token Azure di 10 minuti (501 se Azure non è configurato)
 //   POST /api/tts           { ssml } → audio mp3     via di riserva: è il Worker a chiedere l'audio ad Azure
+//   GET  /api/data          → dati per i widget (finanze, portafoglio, meteo, agenda, notizie)
+//   GET/POST /api/budget    { settimana?, mese? } → budget (salvato in un posto solo, KV)
 //   GET  /api/health        → { ok, name }
 // Tutte le route /api/* (tranne health) chiedono "Authorization: Bearer <APP_SECRET>".
 // Segreti (wrangler secret put): ANTHROPIC_API_KEY, APP_SECRET, AZURE_SPEECH_KEY. Mai nel codice.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "./persona.js";
+import { TOOLS, runTool } from "./tools.js";
+import { dashboard, setBudget, getBudget } from "./data.js";
 
 const HISTORY_MAX = 10;                 // ultimi 10 messaggi per sessione
 const HISTORY_TTL = 60 * 60 * 24 * 30;  // 30 giorni
@@ -40,6 +44,13 @@ export default {
       }
       if (url.pathname === "/api/tts" && request.method === "POST") {
         return await tts(request, env, cors);
+      }
+      if (url.pathname === "/api/data" && request.method === "GET") {
+        return json(await dashboard(env), 200, { ...cors, "Cache-Control": "no-store" });
+      }
+      if (url.pathname === "/api/budget") {
+        if (request.method === "POST") return json(await setBudget(env, await request.json().catch(() => ({}))), 200, cors);
+        return json(await getBudget(env), 200, cors);
       }
       if (url.pathname === "/api/chat" && request.method === "POST") {
         return await chat(request, env, ctx, cors);
@@ -71,24 +82,37 @@ async function chat(request, env, ctx, cors) {
   const work = (async () => {
     let reply = "";
     try {
-      const stream = client.messages.stream({
-        model: env.MODEL || "claude-haiku-5-5",
-        max_tokens: 2048,
-        // Risposte vocali: conta la latenza, quindi ragionamento minimo.
-        output_config: { effort: "low" },
-        system: buildSystemPrompt(env),
-        messages,
-      });
-      for await (const event of stream) {
-        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-          reply += event.delta.text;
-          await writer.write(enc.encode(event.delta.text));
+      // Ciclo con gli strumenti: il testo va all'app mentre arriva; se il modello chiede strumenti,
+      // li eseguiamo tutti insieme e continuiamo. Al massimo 5 giri.
+      const turn = [...messages];
+      for (let round = 0; round < 5; round++) {
+        const stream = client.messages.stream({
+          model: env.MODEL || "claude-haiku-5-5",
+          max_tokens: 2048,
+          // Risposte vocali: conta la latenza, quindi ragionamento minimo.
+          output_config: { effort: "low" },
+          system: buildSystemPrompt(env),
+          tools: TOOLS,
+          messages: turn,
+        });
+        for await (const event of stream) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            reply += event.delta.text;
+            await writer.write(enc.encode(event.delta.text));
+          }
         }
-      }
-      const final = await stream.finalMessage();
-      if (final.stop_reason === "refusal" && !reply) {
-        reply = "Scusa, su questo non posso aiutarti.";
-        await writer.write(enc.encode(reply));
+        const final = await stream.finalMessage();
+        if (final.stop_reason === "refusal" && !reply) {
+          reply = "Scusa, su questo non posso aiutarti.";
+          await writer.write(enc.encode(reply));
+          break;
+        }
+        if (final.stop_reason !== "tool_use") break;
+        const calls = final.content.filter((b) => b.type === "tool_use");
+        const results = await Promise.all(calls.map(async (c) => ({ type: "tool_result", tool_use_id: c.id, ...(await runTool(env, c.name, c.input)) })));
+        turn.push({ role: "assistant", content: final.content }, { role: "user", content: results });
+        // Separa il testo dei giri diversi, così la voce non incolla le frasi.
+        if (reply && !/\s$/.test(reply)) { reply += " "; await writer.write(enc.encode(" ")); }
       }
       // Salva la conversazione (solo testo, ultimi HISTORY_MAX messaggi).
       const updated = [...messages, { role: "assistant", content: reply || "…" }].slice(-HISTORY_MAX);

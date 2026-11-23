@@ -3,6 +3,7 @@ import { startBrain } from "./brain.js";
 import { startStars } from "./stars.js";
 import { createVoice, createChunker } from "./voice.js";
 import { createListener, canListen } from "./listen.js";
+import { createWidgets, parseTags, HOME_WIDGETS } from "./widgets.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -38,6 +39,7 @@ const prefs = {
   get voice() { return pref("m2.voice", true); },          // Mark risponde a voce
   get wake() { return pref("m2.wake", false); },           // "Ehi Mark" sempre in ascolto
   get continuous() { return pref("m2.continuous", true); }, // dopo una risposta a voce riascolta da solo
+  get discreet() { return pref("m2.discreet", false); },   // modalità discreta: niente cifre in euro
 };
 
 // Di solito l'app è servita dal Worker stesso: allora l'indirizzo è quello della pagina.
@@ -91,6 +93,8 @@ function showText(t) { if (textHeld) hiddenText += t; else $("reply").textConten
 
 function afterReply() {
   busy = false;
+  document.body.classList.remove("replying");
+  loadData();
   setState("idle");
   maybeReload();
   if (listener) listener.resume({ continueConversation: lastHandsFree && prefs.continuous });
@@ -101,6 +105,9 @@ async function send(text, { spoken = false } = {}) {
   text = text.trim();
   if (!text || busy) return;
   if (!workerUrl() || !secret()) { $("settings").showModal(); return; }
+  // «Sono in compagnia» / «sono da solo»: modalità discreta anche a voce.
+  if (/\bsono in compagnia\b/i.test(text)) { store.set("m2.discreet", "1"); renderAll(); }
+  else if (/\bsono (da solo|solo)\b/i.test(text)) { store.set("m2.discreet", "0"); renderAll(); }
   busy = true;
   listener?.pause();
   const speak = prefs.voice;
@@ -114,9 +121,11 @@ async function send(text, { spoken = false } = {}) {
   addMsg("user", text);
   reply.hidden = false;
   reply.textContent = "";
+  $("cards").hidden = true; $("cards").textContent = "";
+  document.body.classList.add("replying");
   setState("thinking");
   try {
-    const res = await api("/api/chat", { method: "POST", body: JSON.stringify({ message: text, sessionId: store.get("m2.session") || undefined }) });
+    const res = await api("/api/chat", { method: "POST", body: JSON.stringify({ message: (prefs.discreet ? "[In compagnia] " : "") + text, sessionId: store.get("m2.session") || undefined }) });
     if (res.status === 401) throw new Error("Codice dell'app sbagliato: controllalo nelle impostazioni.");
     if (!res.ok || !res.body) throw new Error("Il cervello non risponde. Riprova tra poco.");
     const sid = res.headers.get("X-Session-Id");
@@ -135,8 +144,10 @@ async function send(text, { spoken = false } = {}) {
     }
     // I tag per l'app (da "[[" in poi) non si mostrano.
     revealText();
-    reply.textContent = reply.textContent.split("[[")[0].trim();
+    const full = reply.textContent;
+    reply.textContent = full.split("[[")[0].trim();
     chunker?.end();
+    showCards(parseTags(full));
   } catch (err) {
     revealText();
     reply.textContent = err.message || "Qualcosa è andato storto.";
@@ -172,6 +183,7 @@ $("btn-settings").addEventListener("click", () => {
   $("s-voice").checked = prefs.voice;
   $("s-wake").checked = prefs.wake;
   $("s-continuous").checked = prefs.continuous;
+  $("s-discreet").checked = prefs.discreet;
   $("s-wake").disabled = !canListen;
   $("settings").showModal();
 });
@@ -181,6 +193,9 @@ $("btn-save").addEventListener("click", () => {
   store.set("m2.voice", $("s-voice").checked ? "1" : "0");
   store.set("m2.wake", $("s-wake").checked ? "1" : "0");
   store.set("m2.continuous", $("s-continuous").checked ? "1" : "0");
+  store.set("m2.discreet", $("s-discreet").checked ? "1" : "0");
+  renderAll();
+  loadData();
   voice.unlock();
   listener?.setWake(prefs.wake);
   setState(uiState);
@@ -195,6 +210,63 @@ $("btn-new").addEventListener("click", async () => {
     $("settings").close();
   } catch { alert("Non riesco a parlare col cervello."); }
 });
+
+// ── Widget: dati veri dal Worker, ricaricati all'avvio, dopo ogni risposta e ogni 5 minuti ──
+const widgets = createWidgets({ discreet: () => prefs.discreet });
+let data = null;
+let lastTags = null;
+async function loadData() {
+  if (!workerUrl() || !secret()) return;
+  try {
+    const res = await api("/api/data");
+    if (res.ok) { data = await res.json(); renderAll(); }
+  } catch {}
+}
+const wide = matchMedia("(min-width: 1100px)");
+function renderHome() {
+  const all = HOME_WIDGETS.map((n) => widgets.render(n, data || {})).filter(Boolean);
+  for (const id of ["side-left", "side-right", "home-cards"]) $(id).textContent = "";
+  if (!workerUrl() || !secret()) return;
+  if (wide.matches) all.forEach((c, i) => $(i % 2 ? "side-right" : "side-left").append(c));
+  else $("home-cards").append(...all);
+}
+function showCards(tags) {
+  lastTags = tags;
+  const list = [...tags.widgets.map((n) => widgets.render(n, data || {})), ...tags.custom.map((c) => widgets.custom(c))].filter(Boolean);
+  $("cards").textContent = "";
+  $("cards").append(...list);
+  $("cards").hidden = !list.length;
+}
+function renderAll() {
+  document.body.classList.toggle("discreet", prefs.discreet);
+  renderHome();
+  if (lastTags) showCards(lastTags);
+}
+wide.addEventListener("change", renderHome);
+// Tocco su una scheda: si apre il dettaglio (nel budget, il modulo per cambiarlo).
+document.addEventListener("click", (e) => {
+  const c = e.target.closest(".card");
+  if (!c || e.target.closest("form, a")) return;
+  c.classList.toggle("open");
+});
+document.addEventListener("submit", async (e) => {
+  if (!e.target.classList.contains("budget-form")) return;
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const num = (v) => (String(v).trim() === "" ? null : parseFloat(String(v).replace(",", ".")));
+  try {
+    await api("/api/budget", { method: "POST", body: JSON.stringify({ settimana: num(f.get("settimana")), mese: num(f.get("mese")) }) });
+    await loadData();
+  } catch {}
+});
+$("btn-discreet").addEventListener("click", () => {
+  store.set("m2.discreet", prefs.discreet ? "0" : "1");
+  renderAll();
+});
+renderAll();
+loadData();
+setInterval(() => { if (!busy && document.visibilityState === "visible") loadData(); }, 5 * 60 * 1000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !busy) loadData(); });
 
 // "Ehi Mark" sempre in ascolto, se attivato (il browser chiede il permesso del microfono).
 if (listener && prefs.wake) listener.setWake(true);
