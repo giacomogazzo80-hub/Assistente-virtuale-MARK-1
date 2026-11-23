@@ -1,0 +1,4 @@
+# Copia questo file in ".dev.vars" (che NON va su git) solo per provare il Worker sul tuo computer.
+# In produzione i segreti si mettono con "npx wrangler secret put NOME".
+ANTHROPIC_API_KEY=
+APP_SECRET=

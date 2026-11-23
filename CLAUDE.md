@@ -1,0 +1,48 @@
+# Contesto del progetto (per Claude)
+
+Jack (italiano, scrive e legge in italiano) sta costruendo un assistente vocale personale. In questo repository ci sono due app:
+
+- **Mark 1** (cartella principale: `index.html`, `app.js`, `brain.js`, …): l'app esistente, pubblicata su GitHub Pages. La chiave Claude sta sul telefono, notizie e mercati arrivano da GitHub Actions (`.github/workflows/pubblica.yml`). Non toccarla senza che Jack lo chieda.
+- **Mark 2** (cartella `mark2/`): il nuovo assistente costruito seguendo `docs/guida.md` (architettura «Geoff» senza n8n e senza Telegram). Si lavora a tappe; ogni tappa deve funzionare prima della successiva.
+
+## Architettura di Mark 2
+
+```
+mark2/app/     PWA statica (HTML+CSS+JS senza framework), pubblicata con GitHub Pages su /mark2/app/
+mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memoria in KV
+```
+
+- Il Worker usa `@anthropic-ai/sdk` con `claude-haiku-5-5` ed effort `low` (latenza bassa per la voce).
+- Memoria conversazione: KV `MEMORY`, chiave `conv:<sessionId>`, ultimi 10 messaggi, scadenza 30 giorni.
+  Sessione comune a PC e telefono: chiave `session:current`; «Conversazione nuova» la cambia.
+- Route protette da `Authorization: Bearer <APP_SECRET>`. CORS solo per gli indirizzi in `ALLOWED_ORIGINS`.
+
+## Dove si cambiano nome e aspetto
+
+- App: `mark2/app/config.js` (`NAME`, `ACCENT`, `VERSION`) + `manifest.webmanifest` + `index.html` (titolo) + `icon.svg`.
+- Personaggio: `[vars]` in `mark2/worker/wrangler.toml` (`ASSISTANT_NAME`, `PERSONALITY`, `USER_NAME`, `TIMEZONE`, `MODEL`).
+- Il testo del system prompt sta in `mark2/worker/src/persona.js`: tienilo breve (ogni token rallenta la voce).
+
+## Regole
+
+- **Segreti** (`ANTHROPIC_API_KEY`, `APP_SECRET`, poi chiavi Azure/Google/VAPID): solo con `npx wrangler secret put`. Mai in chat, nel codice o in git (`.dev.vars` è ignorato).
+- **A ogni rilascio dell'app** cambia `VERSION` sia in `mark2/app/sw.js` sia in `mark2/app/config.js`.
+- Una regola, una funzione: i calcoli (budget ecc.) vivono in un posto solo nel Worker.
+- Soluzioni gratuite prima di tutto; niente servizi a pagamento senza chiedere.
+- Prova con una richiesta vera prima di dire che funziona.
+
+## Stato delle tappe
+
+| Tappa | Stato |
+|---|---|
+| 1. PWA minima | Fatta (23/11/2026): cervello animato, chat testuale in streaming, impostazioni, service worker network-first |
+| 2. Cervello `/api/chat` | Fatta (23/11/2026): streaming, memoria KV, sessione comune. Da pubblicare su Cloudflare |
+| 3. Voce | Da fare |
+| 4. Dati personali e strumenti | Da fare |
+| 5. Memoria e promemoria | Da fare |
+| 6. Notifiche push | Da fare |
+| 7. Widget | Da fare |
+
+## Decisioni prese
+
+- 23/11/2026: Mark 2 vive in `mark2/` per non rompere Mark 1, che resta online. Nome e colori provvisori («Mark 2», oro `#f0c04a`) in attesa delle scelte di Jack.

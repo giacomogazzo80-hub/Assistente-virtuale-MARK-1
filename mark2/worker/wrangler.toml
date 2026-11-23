@@ -1,0 +1,26 @@
+# Configurazione del Worker di Mark 2 (Cloudflare, piano gratuito).
+# I SEGRETI NON VANNO QUI: si inseriscono con
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put APP_SECRET
+name = "mark2-cervello"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Memoria della conversazione (ultimi 10 messaggi, scadenza 30 giorni).
+# Crea il namespace con: npx wrangler kv namespace create MEMORY
+# e incolla qui l'id che ti restituisce.
+[[kv_namespaces]]
+binding = "MEMORY"
+id = "INSERISCI_ID_KV"
+
+[vars]
+# ── Personaggio: cambia liberamente questi valori ──
+ASSISTANT_NAME = "Mark 2"
+USER_NAME = "Jack"
+PERSONALITY = "un assistente personale educato, sveglio e con un'ironia leggera. Dai del tu, vai dritto al punto."
+TIMEZONE = "Europe/Rome"
+# Modello veloce per le risposte a voce.
+MODEL = "claude-haiku-5-5"
+# Indirizzi da cui l'app può chiamare il Worker (separati da virgola).
+ALLOWED_ORIGINS = "https://giacomogazzo80-hub.github.io"
