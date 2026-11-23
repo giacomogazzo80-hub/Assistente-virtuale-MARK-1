@@ -1,7 +1,7 @@
 // Service worker "network-first": prende sempre dalla rete, usa la copia solo offline.
 // A OGNI VERSIONE NUOVA cambia VERSION (e anche CONFIG.VERSION in config.js), altrimenti i telefoni tengono la vecchia.
-const VERSION = "mark2-v6";
-const SHELL = ["./", "index.html", "style.css", "app.js", "config.js", "manifest.webmanifest", "icon.svg", "brain.js", "stars.js", "voice.js", "listen.js", "widgets.js"];
+const VERSION = "mark2-v7";
+const SHELL = ["./", "index.html", "style.css", "app.js", "config.js", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "brain.js", "stars.js", "voice.js", "listen.js", "widgets.js"];
 
 self.addEventListener("install", (e) =>
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())));
