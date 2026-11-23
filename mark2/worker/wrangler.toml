@@ -1,0 +1,40 @@
+# Configurazione del Worker di Mark (Cloudflare, piano gratuito).
+# I SEGRETI NON VANNO QUI: si inseriscono con
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put APP_SECRET
+#   npx wrangler secret put AZURE_SPEECH_KEY   (facoltativo: senza, Mark usa la voce del browser)
+name = "mark2-cervello"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# L'app (mark2/app) è servita dal Worker stesso: un solo indirizzo per app e cervello.
+# Le richieste /api/* non sono file, quindi passano al codice del Worker.
+[assets]
+directory = "../app"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+# Memoria della conversazione (ultimi 10 messaggi, scadenza 30 giorni).
+# Namespace "mark2-memoria" creato dal dashboard Cloudflare il 23/11/2026.
+
+[[kv_namespaces]]
+binding = "MEMORY"
+id = "4a244aed3b3745ac8051f642d5f20174"
+
+[vars]
+# ── Personaggio: cambia liberamente questi valori ──
+ASSISTANT_NAME = "Mark"
+USER_NAME = "Jack"
+PERSONALITY = "cordiale, deciso e sicuro di sé. Dai del tu, vai dritto al punto, quando serve dai un consiglio chiaro senza giri di parole."
+# Voce (Tappa 3, Azure Speech): maschile e calma. Alternativa più grave: it-IT-AlessioMultilingualNeural.
+VOICE = "it-IT-DiegoNeural"
+# Regione della risorsa Azure Speech (non è un segreto).
+AZURE_SPEECH_REGION = "westeurope"
+# Città per il meteo (Tappa 4, Open-Meteo): nome|latitudine|longitudine, separate da ";".
+WEATHER_CITIES = "Vimodrone|45.5150|9.2850;Cernusco sul Naviglio|45.5250|9.3330"
+TIMEZONE = "Europe/Rome"
+# Modello veloce per le risposte a voce.
+MODEL = "claude-haiku-5-5"
+# Indirizzi da cui l'app può chiamare il Worker (separati da virgola).
+ALLOWED_ORIGINS = "https://giacomogazzo80-hub.github.io"

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050507">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mark">
+  <title>Mark</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;600&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <header class="top">
+    <span class="name" id="name">Mark</span>
+    <button class="icon-btn" id="btn-settings" aria-label="Impostazioni">⚙︎</button>
+  </header>
+
+  <main>
+    <div class="brain-wrap" id="brain-wrap" data-state="idle">
+      <canvas id="brain" aria-label="Il cervello di Mark: giralo con il dito"></canvas>
+    </div>
+    <p class="status" id="status">In attesa</p>
+    <section class="reply glass" id="reply" hidden></section>
+    <section class="log" id="log"></section>
+  </main>
+
+  <form class="bar glass" id="form" autocomplete="off">
+    <input id="prompt" placeholder="Scrivi a Mark…" enterkeyhint="send">
+    <button type="submit" class="send" aria-label="Invia">➤</button>
+  </form>
+
+  <dialog id="settings" class="glass">
+    <form method="dialog" class="settings">
+      <h2>Impostazioni</h2>
+      <label>Indirizzo del cervello (lascia vuoto se apri Mark dal suo indirizzo workers.dev)
+        <input id="s-url" placeholder="https://mark2-cervello.tuonome.workers.dev">
+      </label>
+      <label>Codice dell'app
+        <input id="s-secret" type="password" placeholder="Il codice segreto scelto da te">
+      </label>
+      <p class="hint">Il codice resta solo su questo dispositivo. Non è la chiave dell'intelligenza artificiale, quella sta al sicuro sul server.</p>
+      <label class="check"><input type="checkbox" id="s-voice"> Mark risponde a voce</label>
+      <label class="check"><input type="checkbox" id="s-wake"> «Ehi Mark» sempre in ascolto (solo con l'app aperta)</label>
+      <label class="check"><input type="checkbox" id="s-continuous"> Conversazione continua: dopo la risposta riascolta da solo</label>
+      <p class="hint">Tocca il pianeta per parlare e toccalo di nuovo per inviare. Per chiudere la conversazione di' «grazie, è tutto».</p>
+      <button type="button" id="btn-new" class="ghost">Conversazione nuova</button>
+      <div class="row">
+        <span class="hint mono" id="version"></span>
+        <button value="close" id="btn-save">Salva</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
