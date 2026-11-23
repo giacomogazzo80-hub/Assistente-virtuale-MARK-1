@@ -16,11 +16,11 @@ not_found_handling = "single-page-application"
 run_worker_first = ["/api/*"]
 
 # Memoria della conversazione (ultimi 10 messaggi, scadenza 30 giorni).
-# Il deploy da GitHub (workflow "Pubblica Mark") crea il namespace da solo e mette qui l'id.
-# A mano: npx wrangler kv namespace create MEMORY e incolla l'id.
+# Namespace "mark2-memoria" creato dal dashboard Cloudflare il 23/11/2026.
+
 [[kv_namespaces]]
 binding = "MEMORY"
-id = "INSERISCI_ID_KV"
+id = "4a244aed3b3745ac8051f642d5f20174"
 
 [vars]
 # ── Personaggio: cambia liberamente questi valori ──

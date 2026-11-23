@@ -3,21 +3,14 @@
 Mark, il nuovo assistente vocale, costruito seguendo la guida in [`docs/guida.md`](../docs/guida.md).
 Per ora: l'app con il pianeta di neuroni, la chat che risponde mentre scrive e la voce (tocca il pianeta per parlare, oppure attiva «Ehi Mark» nelle impostazioni).
 
-## Come metterlo online (una volta sola, circa 10 minuti, tutto dal browser)
+## Come è pubblicato
 
-Non serve installare niente. Si pubblica da GitHub sul tuo account Cloudflare gratuito.
+Mark gira sull'account Cloudflare di Jack (piano gratuito), nel Worker `mark2-cervello`, collegato a questo repository
+con **Workers Builds**: ogni modifica a `main` viene pubblicata da sola (cartella del progetto: `mark2/worker`).
 
-1. **Token Cloudflare**: dash.cloudflare.com → icona profilo → *Profilo* → *Token API* → *Crea token* → modello **«Modifica Cloudflare Workers»** → *Continua* → *Crea token*. Copialo (si vede una volta sola).
-2. **Account ID**: nella home di dash.cloudflare.com, menu ⋯ accanto al nome dell'account → *Copia ID account*.
-3. **Segreti su GitHub**: nel repository → *Settings* → *Secrets and variables* → *Actions* → *New repository secret*. Creane quattro:
-   - `CLOUDFLARE_API_TOKEN` (punto 1)
-   - `CLOUDFLARE_ACCOUNT_ID` (punto 2)
-   - `ANTHROPIC_API_KEY` (la chiave Claude API, la stessa di Mark 1 va bene)
-   - `APP_SECRET` (un codice lungo inventato da te, es. 30 lettere e numeri a caso: tienilo, ti serve al punto 5)
-4. **Pubblica**: *Actions* → **Pubblica Mark** → *Run workflow*. Dopo circa un minuto, nel log del passo «Pubblica», trovi l'indirizzo: `https://mark2-cervello.<tuonome>.workers.dev`.
-5. Apri quell'indirizzo, tocca ⚙︎, scrivi il codice del punto 3 in «Codice dell'app», Salva. Da telefono: *Condividi* → *Aggiungi alla schermata Home*.
-
-Da quel momento ogni modifica a `mark2/` che entra in `main` si pubblica da sola.
+- Memoria: namespace KV `mark2-memoria` (id già scritto in `worker/wrangler.toml`).
+- Segreti, inseriti a mano nel dashboard (Worker → Impostazioni → Variabili e segreti): `ANTHROPIC_API_KEY`, `APP_SECRET`, facoltativo `AZURE_SPEECH_KEY`.
+- L'app si apre all'indirizzo del Worker (`https://mark2-cervello.<account>.workers.dev`). La prima volta: ⚙︎ → «Codice dell'app» = `APP_SECRET` → Salva. Da telefono: Condividi → Aggiungi alla schermata Home.
 
 **Chi può usarlo**: solo chi conosce il codice dell'app. La pagina si può aprire, ma senza codice non risponde e non mostra nessun dato.
 

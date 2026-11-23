@@ -18,7 +18,7 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 - Voce: `/api/voice-token` (token Azure 10 min) e `/api/tts` (riserva). Senza `AZURE_SPEECH_KEY` rispondono 501 e l'app usa la voce del browser. Le regole di pronuncia e l'SSML stanno solo in `mark2/app/voice.js` (`speakable`, `ssml`).
 - Route protette da `Authorization: Bearer <APP_SECRET>`. CORS solo per gli indirizzi in `ALLOWED_ORIGINS`.
 
-- Pubblicazione: workflow `.github/workflows/pubblica-mark.yml` (push su main in `mark2/**` o a mano). Segreti in GitHub Actions: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ANTHROPIC_API_KEY`, `APP_SECRET` (+ facoltativo `AZURE_SPEECH_KEY`). Il workflow crea/riusa il KV `mark2-memoria`.
+- Pubblicazione: Cloudflare **Workers Builds** collegato al repository (ramo `main`, cartella `mark2/worker`), Worker `mark2-cervello` sull'account di Jack. KV `mark2-memoria` (id in `wrangler.toml`). Segreti messi da Jack nel dashboard: `ANTHROPIC_API_KEY`, `APP_SECRET` (+ facoltativo `AZURE_SPEECH_KEY`). Sull'account c'è anche un Worker `mark-api` di Jack: non toccarlo.
 - Protezione: `APP_SECRET`. **Niente Cloudflare Access**: il piano gratuito di Zero Trust chiede la carta, e Jack non vuole inserirla.
 - Voce senza carta: voce del dispositivo, scelta in `bestBrowserVoice()` (Edge «Online (Natural)», iPhone «Luca Premium»). Workers AI non ha voci italiane (nov 2026).
 
