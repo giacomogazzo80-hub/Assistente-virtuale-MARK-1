@@ -22,6 +22,10 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 - Protezione: `APP_SECRET`. **Niente Cloudflare Access**: il piano gratuito di Zero Trust chiede la carta, e Jack non vuole inserirla.
 - Voce senza carta: voce del dispositivo, scelta in `bestBrowserVoice()` (Edge «Online (Natural)», iPhone «Luca Premium»). Workers AI non ha voci italiane (nov 2026).
 
+- Finanze: foglio Google «Mark – Finanze» (id `1tfD505MGyhHaXQ-Am1ilEeV4rakhA663cawadicAe8Q`, nel Drive di Jack), schema di Geoff:
+  `Movimenti` (Data gg/mm/aaaa, Tipo, Categoria, Descrizione, Importo €), `Portafoglio` (ISIN, Nome, Simbolo Yahoo, Quote, Prezzo medio di carico, Investito = formula), `Elenchi` (tipi e categorie per i menu a tendina).
+  Il foglio è in locale it_IT: nelle formule scritte via API il separatore è `;`, non `,`. Budget e obiettivi NON stanno nel foglio (un posto solo, nel Worker).
+
 ## Dove si cambiano nome e aspetto
 
 - App: `mark2/app/config.js` (`NAME`, `ACCENT`, `VERSION`), il pianeta in `brain.js` (colori `GOLD`/`LIGHT`) + `manifest.webmanifest` + `index.html` (titolo) + `icon.svg`.
