@@ -107,13 +107,19 @@ export async function finance(env, { fresh = false } = {}) {
     alGiorno: giorniRimasti > 0 ? round2(Math.max(0, limite - speso) / giorniRimasti) : null,
   };
 
+  const settimana = voce(speseSettimana, budget.settimana, 7 - t.wd);
+  const mese = voce(speseMese, budget.mese, daysInMonth - t.d + 1);
+  // Si spende rispettando ENTRAMBI i budget: il «al giorno» del mese non può superare quello della settimana
+  // (a fine mese restano pochi giorni e il conto del solo mese darebbe cifre troppo alte).
+  if (mese.alGiorno != null && settimana.alGiorno != null) mese.alGiorno = Math.min(mese.alGiorno, settimana.alGiorno);
+
   const value = {
     collegato: true,
     aggiornato: new Date().toISOString(),
     oggi: today,
     budget: {
-      settimana: voce(speseSettimana, budget.settimana, 7 - t.wd),
-      mese: voce(speseMese, budget.mese, daysInMonth - t.d + 1),
+      settimana,
+      mese,
     },
     mese: {
       entrate: entrateMese, spese: speseMese, fuoriBudget: fuoriBudgetMese,

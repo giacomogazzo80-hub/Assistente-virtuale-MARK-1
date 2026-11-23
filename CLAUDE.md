@@ -51,7 +51,7 @@ mark2/worker/  Cloudflare Worker (il "cervello"): /api/chat in streaming, memori
 | 1. PWA minima | Fatta (23/11/2026): pianeta di neuroni di Mark 1, chat testuale in streaming, impostazioni, service worker network-first |
 | 2. Cervello `/api/chat` | Fatta (23/11/2026): streaming, memoria KV, sessione comune. Online dal 23/11/2026: https://mark2-cervello.mark-backend.workers.dev |
 | 3. Voce | Fatta (23/11/2026): `listen.js` (tocco sul pianeta, «Ehi Mark», conversazione continua), `voice.js` (Azure diretto con token → Azure via Worker → voce del browser; pezzi brevi; testo e voce insieme). Azure da attivare con `AZURE_SPEECH_KEY` |
-| 4. Dati personali e strumenti | Codice fatto (23/11/2026): strumenti nel cervello (`tools.js`), dati e regole in `data.js`, Google in `google.js`, `/api/data`, `/api/budget`. Meteo e notizie vanno subito; finanze e agenda aspettano i segreti Google |
+| 4. Dati personali e strumenti | Fatta (23/11/2026): strumenti nel cervello (`tools.js`), dati e regole in `data.js`, Google in `google.js` (service account `mark-156@mark-assistente.iam.gserviceaccount.com`, progetto Cloud `mark-assistente`), `/api/data`, `/api/budget`. Provata dal vivo |
 | 5. Memoria e promemoria | Da fare |
 | 6. Notifiche push | Da fare |
 | 7. Widget | In parte (23/11/2026): `widgets.js`, schede ai lati su PC e carosello su telefono, tag `[[widget:…]]` e `[[crea:…]]`, modalità discreta. Manca la pagina per scegliere e ordinare i widget |

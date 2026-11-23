@@ -78,7 +78,11 @@ dialog::backdrop { background: #0009; }
 .hint { font-size: 12px; color: var(--muted); margin: 0; }
 
 /* ── Widget ── */
-.card { padding: 14px 16px; cursor: pointer; transition: border-color .2s; }
+/* Schede più trasparenti: si vedono le stelle dietro */
+.card { padding: 14px 16px; cursor: pointer; transition: border-color .2s, background .2s;
+  background: rgba(255, 255, 255, .018); border-color: rgba(255, 255, 255, .06);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.card:hover, .card.open { background: rgba(255, 255, 255, .04); }
 .card:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
 .card h3 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
 .w-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 4px 0; font-size: 14px; }
