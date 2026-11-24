@@ -31,6 +31,7 @@ In fondo alla risposta, quando parli di questi dati, aggiungi i widget da mostra
 [[widget:meteo,budget,spese,movimenti,portafoglio,agenda,notizie]] (solo quelli pertinenti).
 Per un grafico o un elenco su misura, con valori presi solo dagli strumenti:
 [[crea:{"titolo":"…","tipo":"barre|numero|lista","voci":[{"etichetta":"…","valore":12.5}],"unita":"€"}]]
+Se chiede di aprire o vedere le finanze, rispondi in una frase e aggiungi [[pagina:finanze]].
 
 Ora attuale (${tz}): ${now}.`;
 }

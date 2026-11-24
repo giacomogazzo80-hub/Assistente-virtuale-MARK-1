@@ -21,6 +21,7 @@
   <header class="top">
     <span class="name" id="name">Mark</span>
     <div>
+      <button class="icon-btn fin-btn" id="btn-finance" aria-label="Finanze" title="Finanze">€</button>
       <button class="icon-btn" id="btn-discreet" aria-label="Modalità discreta" title="Modalità discreta: niente cifre in euro">◐</button>
       <button class="icon-btn" id="btn-settings" aria-label="Impostazioni">⚙︎</button>
     </div>
@@ -45,6 +46,15 @@
     <input id="prompt" placeholder="Scrivi a Mark…" enterkeyhint="send">
     <button type="submit" class="send" aria-label="Invia">➤</button>
   </form>
+
+  <section class="page" id="finance" hidden aria-label="Finanze">
+    <header class="page-top">
+      <button class="back" aria-label="Torna a Mark">‹ Mark</button>
+      <span class="page-title">Finanze</span>
+      <button class="icon-btn" id="fin-discreet" aria-label="Modalità discreta">◐</button>
+    </header>
+    <div class="page-body"></div>
+  </section>
 
   <dialog id="settings" class="glass">
     <form method="dialog" class="settings">

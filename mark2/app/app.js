@@ -3,7 +3,8 @@ import { startBrain } from "./brain.js";
 import { startStars } from "./stars.js";
 import { createVoice, createChunker } from "./voice.js";
 import { createListener, canListen } from "./listen.js";
-import { createWidgets, parseTags, HOME_WIDGETS } from "./widgets.js";
+import { createWidgets, parseTags, HOME_WIDGETS, FINANCE_WIDGETS } from "./widgets.js";
+import { createFinance } from "./finance.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -147,7 +148,9 @@ async function send(text, { spoken = false } = {}) {
     const full = reply.textContent;
     reply.textContent = full.split("[[")[0].trim();
     chunker?.end();
-    showCards(parseTags(full));
+    const tags = parseTags(full);
+    showCards(tags);
+    if (tags.page === "finanze") openFinance();
   } catch (err) {
     revealText();
     reply.textContent = err.message || "Qualcosa è andato storto.";
@@ -241,12 +244,40 @@ function renderAll() {
   document.body.classList.toggle("discreet", prefs.discreet);
   renderHome();
   if (lastTags) showCards(lastTags);
+  if (!$("finance").hidden) finance.render(data);
 }
 wide.addEventListener("change", renderHome);
-// Tocco su una scheda: si apre il dettaglio (nel budget, il modulo per cambiarlo).
+// ── Pagina Finanze: entra da destra, la home arretra; «indietro», Esc o scorrimento dal bordo la chiudono ──
+const finance = createFinance({ el: $("finance"), discreet: () => prefs.discreet, onClose: () => closeFinance() });
+function openFinance() {
+  const page = $("finance");
+  if (!page.hidden) return;
+  page.classList.add("entering");
+  finance.render(data, { animate: true });
+  setTimeout(() => page.classList.remove("entering"), 1400);
+  page.hidden = false;
+  page.scrollTop = 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add("fin-open")));
+  if (location.hash !== "#finanze") history.pushState({ fin: 1 }, "", "#finanze");
+  loadData();
+}
+function closeFinance(fromHistory = false) {
+  const page = $("finance");
+  if (page.hidden) return;
+  document.body.classList.remove("fin-open");
+  setTimeout(() => { if (!document.body.classList.contains("fin-open")) page.hidden = true; }, 450);
+  if (!fromHistory && location.hash === "#finanze") history.back();
+}
+addEventListener("popstate", () => { if (location.hash === "#finanze") openFinance(); else closeFinance(true); });
+$("btn-finance").addEventListener("click", openFinance);
+$("fin-discreet").addEventListener("click", () => { store.set("m2.discreet", prefs.discreet ? "0" : "1"); renderAll(); });
+if (location.hash === "#finanze") openFinance();
+
+// Tocco su una scheda: quelle dei soldi aprono la pagina Finanze, le altre mostrano il dettaglio.
 document.addEventListener("click", (e) => {
   const c = e.target.closest(".card");
   if (!c || e.target.closest("form, a")) return;
+  if (FINANCE_WIDGETS.includes(c.dataset.w)) { openFinance(); return; }
   c.classList.toggle("open");
 });
 document.addEventListener("submit", async (e) => {

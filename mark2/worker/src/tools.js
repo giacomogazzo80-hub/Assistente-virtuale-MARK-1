@@ -68,7 +68,8 @@ export const TOOLS = [
 ];
 
 const RUN = {
-  finanze: (env) => finance(env),
+  // Al cervello basta il riassunto: i dati per i grafici della pagina Finanze costano solo token (e voce più lenta).
+  finanze: async (env) => { const { giorni, movimenti, giorniMese, ...f } = await finance(env); return f; },
   registra_movimento: (env, i) => addMovement(env, i),
   imposta_budget: (env, i) => setBudget(env, i),
   portafoglio: (env) => portfolio(env),

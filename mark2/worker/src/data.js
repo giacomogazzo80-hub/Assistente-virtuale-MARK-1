@@ -113,6 +113,18 @@ export async function finance(env, { fresh = false } = {}) {
   // (a fine mese restano pochi giorni e il conto del solo mese darebbe cifre troppo alte).
   if (mese.alGiorno != null && settimana.alGiorno != null) mese.alGiorno = Math.min(mese.alGiorno, settimana.alGiorno);
 
+  // Per la pagina Finanze: spesa di ogni giorno del mese, ultimi 6 mesi, tutti i movimenti del mese.
+  const giorni = Array.from({ length: t.d }, (_, i) => ({ g: i + 1, speso: 0 }));
+  for (const m of inMonth) if (m.tipo === "Spesa") giorni[+m.data.slice(8, 10) - 1].speso += m.importo;
+  giorni.forEach((x) => { x.speso = round2(x.speso); });
+  const storico = [];
+  for (let k = 5; k >= 0; k--) {
+    const y = t.m - k > 0 ? t.y : t.y - 1, mm = ((t.m - k - 1 + 12) % 12) + 1;
+    const key = ymd(y, mm, 1).slice(0, 7);
+    const list = movs.filter((m) => m.data.startsWith(key) && m.data <= today);
+    storico.push({ mese: key, spese: sum(list, "Spesa"), entrate: round2(list.filter((m) => m.tipo === "Entrata" && m.categoria !== "Correzione").reduce((a, m) => a + m.importo, 0)) });
+  }
+
   const value = {
     collegato: true,
     aggiornato: new Date().toISOString(),
@@ -126,8 +138,14 @@ export async function finance(env, { fresh = false } = {}) {
       accumulo: sum(inMonth, "Accumulo"), investimenti: sum(inMonth, "Investimento"), correzioni: correzioniMese,
       // Netto = Entrate − Spese − Fuori budget − Correzioni − Accumulo − Investimenti
       netto: round2(entrateMese - speseMese - fuoriBudgetMese - correzioniMese - sum(inMonth, "Accumulo") - sum(inMonth, "Investimento")),
+      // A questo ritmo, quanto avrà speso a fine mese.
+      proiezione: round2((speseMese / t.d) * daysInMonth),
       perCategoria: Object.entries(perCategoria).sort((a, b) => b[1] - a[1]).map(([categoria, importo]) => ({ categoria, importo })),
     },
+    giorniMese: daysInMonth,
+    giorni,
+    storico,
+    movimenti: inMonth.map((m, i) => ({ ...m, i })).sort((a, b) => b.data.localeCompare(a.data) || b.i - a.i).slice(0, 150).map(({ i, ...m }) => ({ ...m, iso: m.data, data: itDate(m.data) })),
     ultimi: movs.map((m, i) => ({ ...m, i })).sort((a, b) => b.data.localeCompare(a.data) || b.i - a.i).slice(0, 8).map(({ i, ...m }) => m).map((m) => ({ ...m, data: itDate(m.data) })),
   };
   mem.set(FIN_KEY, { value, exp: Date.now() + 60000 });
