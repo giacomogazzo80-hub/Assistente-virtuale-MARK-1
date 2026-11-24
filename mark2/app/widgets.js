@@ -2,6 +2,8 @@
 // qui si mostrano soltanto. In modalità discreta le cifre in euro diventano «•••».
 
 export const HOME_WIDGETS = ["meteo", "budget", "agenda", "portafoglio", "spese", "notizie"];
+// Le schede di soldi aprono la pagina Finanze.
+export const FINANCE_WIDGETS = ["budget", "spese", "movimenti", "portafoglio"];
 const TITLES = { meteo: "Meteo", budget: "Budget", spese: "Spese del mese", movimenti: "Ultimi movimenti", portafoglio: "Portafoglio", agenda: "Agenda", notizie: "Notizie" };
 const ICON = (c) => c == null ? "" : c === 0 ? "☀︎" : c <= 2 ? "⛅︎" : c === 3 ? "☁︎" : c <= 48 ? "〰︎" : c <= 67 || (c >= 80 && c <= 82) ? "☂︎" : c <= 77 || c >= 85 && c <= 86 ? "❄︎" : "⚡︎";
 
@@ -39,9 +41,7 @@ export function createWidgets({ discreet }) {
         ? `<div class="w-row"><span>${label}</span><span>${eur(v.speso)} spesi</span></div><p class="w-sub">Budget non impostato: tocca per sceglierlo.</p>`
         : `<div class="w-row"><span>${label}</span><span class="big">${discreet() ? `${v.percentuale}%` : eur(v.rimasto)}</span></div>${bar(v.percentuale)}
            <p class="w-sub">${discreet() ? "del budget usato" : `rimasti di ${eur(v.limite)} · ${eur(v.alGiorno)} al giorno`}</p>`;
-      return line("Settimana", b.settimana) + line("Mese", b.mese) + `
-        <form class="w-more budget-form"><label>Settimana <input name="settimana" inputmode="decimal" value="${b.settimana.limite ?? ""}"></label>
-        <label>Mese <input name="mese" inputmode="decimal" value="${b.mese.limite ?? ""}"></label><button>Salva budget</button></form>`;
+      return line("Settimana", b.settimana) + line("Mese", b.mese);
     },
     spese(d) {
       const p = problem(d.finanze); if (p) return p;
@@ -92,7 +92,7 @@ export function createWidgets({ discreet }) {
 
   function card(name, title, body) {
     const el = document.createElement("article");
-    el.className = "card glass";
+    el.className = `card glass${FINANCE_WIDGETS.includes(name) ? " to-fin" : ""}`;
     el.dataset.w = name;
     el.innerHTML = `<h3>${esc(title)}</h3><div class="w-body">${body}</div>`;
     return el;
@@ -111,6 +111,7 @@ export function parseTags(text) {
     if (m[1] === "widget") out.widgets.push(...m[2].split(",").map((s) => s.trim()).filter(Boolean));
     else { try { out.custom.push(JSON.parse(m[2])); } catch {} }
   }
+  out.page = /\[\[pagina:\s*finanze\s*\]\]/.test(text) ? "finanze" : null;
   out.widgets = [...new Set(out.widgets)].slice(0, 3);
   return out;
 }
